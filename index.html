@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Uttarakhand IDY Wall 2026</title>
+<meta name="theme-color" content="#0A1A0C">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="IDY Wall">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi&family=Cinzel:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -174,6 +181,124 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
 @keyframes spin{to{transform:rotate(360deg);}}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.4;transform:scale(0.75);}}
 @keyframes slideUp{from{transform:translateY(16px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+
+/* YOGA UPLOAD OVERLAY */
+.yoga-overlay{
+  position:fixed;inset:0;
+  background:linear-gradient(135deg,rgba(10,26,12,0.97),rgba(26,14,0,0.97));
+  z-index:5000;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  animation:fadeIn 0.3s ease;
+}
+.yoga-pose-wrap{
+  position:relative;
+  width:200px;height:200px;
+  margin-bottom:32px;
+}
+.yoga-figure{
+  font-size:120px;
+  line-height:1;
+  animation:yogaPose 1.2s ease-in-out infinite alternate;
+  display:block;
+  text-align:center;
+  filter:drop-shadow(0 0 30px rgba(232,97,10,0.5));
+}
+.yoga-ring{
+  position:absolute;
+  inset:-20px;
+  border:2px solid rgba(232,97,10,0.2);
+  border-radius:50%;
+  animation:ringPulse 2s ease infinite;
+}
+.yoga-ring-2{
+  position:absolute;
+  inset:-40px;
+  border:1.5px solid rgba(232,97,10,0.1);
+  border-radius:50%;
+  animation:ringPulse 2s ease infinite 0.4s;
+}
+.yoga-ring-3{
+  position:absolute;
+  inset:-60px;
+  border:1px solid rgba(232,97,10,0.06);
+  border-radius:50%;
+  animation:ringPulse 2s ease infinite 0.8s;
+}
+.yoga-title{
+  font-family:'Cinzel',serif;
+  font-size:22px;font-weight:700;
+  color:#fff;
+  margin-bottom:8px;
+  animation:fadeDown 0.5s ease;
+}
+.yoga-subtitle{
+  font-size:13px;
+  color:rgba(255,255,255,0.5);
+  margin-bottom:32px;
+  font-family:'Tiro Devanagari Hindi',serif;
+  animation:fadeDown 0.6s ease;
+}
+.yoga-progress-wrap{
+  width:280px;
+}
+.yoga-progress-outer{
+  height:4px;
+  background:rgba(255,255,255,0.08);
+  border-radius:100px;
+  overflow:hidden;
+  margin-bottom:10px;
+}
+.yoga-progress-inner{
+  height:100%;
+  background:linear-gradient(90deg,var(--saffron),#FFB347,var(--green));
+  background-size:200%;
+  border-radius:100px;
+  transition:width 0.4s ease;
+  animation:shimmer 2s linear infinite;
+}
+.yoga-pct{
+  font-family:'Cinzel',serif;
+  font-size:28px;font-weight:700;
+  color:var(--saffron-light);
+  text-align:center;
+  line-height:1;
+  margin-bottom:4px;
+}
+.yoga-status{
+  font-size:12px;
+  color:rgba(255,255,255,0.4);
+  text-align:center;
+  letter-spacing:1px;
+  text-transform:uppercase;
+}
+.yoga-dots{display:flex;gap:6px;justify-content:center;margin-top:20px;}
+.yoga-dot{
+  width:6px;height:6px;
+  background:rgba(255,255,255,0.2);
+  border-radius:50%;
+  animation:dotPulse 1.4s ease infinite;
+}
+.yoga-dot:nth-child(2){animation-delay:0.2s;}
+.yoga-dot:nth-child(3){animation-delay:0.4s;}
+
+@keyframes yogaPose{
+  from{transform:scale(1) rotate(-3deg);}
+  to{transform:scale(1.08) rotate(3deg);}
+}
+@keyframes ringPulse{
+  0%{transform:scale(0.95);opacity:0.8;}
+  50%{transform:scale(1.05);opacity:0.3;}
+  100%{transform:scale(0.95);opacity:0.8;}
+}
+@keyframes shimmer{
+  0%{background-position:0% 50%;}
+  100%{background-position:200% 50%;}
+}
+@keyframes dotPulse{
+  0%,100%{background:rgba(255,255,255,0.2);transform:scale(1);}
+  50%{background:var(--saffron);transform:scale(1.4);}
+}
 </style>
 </head>
 <body>
@@ -188,9 +313,10 @@ const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const DISTRICTS=['Dehradun','Haridwar','Nainital','Almora','Pauri Garhwal','Tehri Garhwal','Chamoli','Uttarkashi','Pithoragarh','Bageshwar','Champawat','Udham Singh Nagar','Rudraprayag'];
 
 const S={
-  entries:[],loading:true,filter:'all',user:null,
+  entries:[],loading:true,filter:'all',user:null,appUser:null,
   showLogin:false,loginMobile:'',loginPass:'',loginErr:'',
-  showChangePwd:false,newPass:'',newPass2:'',changePwdErr:'',changePwdOk:false,
+  showChangePwd:false,newPass:'',newPass2:'',changePwdErr:'',
+  showAdmin:false,adminDistrict:'',adminName:'',adminMobile:'',adminGenPwd:'',adminUsers:[],adminLoading:false,adminErr:'',
   showUpload:false,uType:'photo',uFile:null,uFileName:'',
   uEvent:'',uLocation:'',uDistrict:'',uDate:tod(),
   uDesc:'',uNewspaper:'',uYoutube:'',
@@ -198,7 +324,68 @@ const S={
   lightbox:null,toast:null
 };
 function tod(){return new Date().toISOString().split('T')[0];}
+
+// YOGA UPLOAD ANIMATION
+const YOGA_POSES = ['🧘', '🧘‍♀️', '🏃‍♂️', '🤸', '🤸‍♀️', '🧎', '🧎‍♀️', '🙏', '⛹️', '🤾'];
+const YOGA_MESSAGES = [
+  'अपलोड हो रहा है...', 'देवभूमि की यादें सहेजी जा रही हैं...',
+  'योग की शक्ति अपलोड हो रही है...', 'IDY Wall पर जुड़ रहा है...',
+  'Cloudinary पर भेजा जा रहा है...', 'थोड़ा इंतज़ार करें...'
+];
+let yogaPoseIdx = 0;
+let yogaMsgIdx = 0;
+let yogaInterval = null;
+
+function startYogaAnimation(){
+  yogaPoseIdx = 0; yogaMsgIdx = 0;
+  yogaInterval = setInterval(() => {
+    yogaPoseIdx = (yogaPoseIdx + 1) % YOGA_POSES.length;
+    yogaMsgIdx = (yogaMsgIdx + 1) % YOGA_MESSAGES.length;
+    const fig = document.getElementById('yogaFigure');
+    const msg = document.getElementById('yogaMsg');
+    if(fig) { fig.style.opacity='0'; setTimeout(()=>{ fig.textContent=YOGA_POSES[yogaPoseIdx]; fig.style.opacity='1'; },200); }
+    if(msg) msg.textContent = YOGA_MESSAGES[yogaMsgIdx];
+  }, 1800);
+}
+
+function stopYogaAnimation(){
+  if(yogaInterval){ clearInterval(yogaInterval); yogaInterval=null; }
+}
+
+function updateYogaProgress(pct){
+  const bar = document.getElementById('yogaBar');
+  const num = document.getElementById('yogaPct');
+  if(bar) bar.style.width = pct + '%';
+  if(num) num.textContent = pct + '%';
+}
+
+function rYogaOverlay(){
+  return `<div class="yoga-overlay" id="yogaOverlay">
+    <div class="yoga-pose-wrap">
+      <div class="yoga-ring"></div>
+      <div class="yoga-ring-2"></div>
+      <div class="yoga-ring-3"></div>
+      <span class="yoga-figure" id="yogaFigure" style="transition:opacity 0.2s ease">🧘</span>
+    </div>
+    <div class="yoga-title">Uploading to IDY Wall</div>
+    <div class="yoga-subtitle" id="yogaMsg">देवभूमि की यादें सहेजी जा रही हैं...</div>
+    <div class="yoga-progress-wrap">
+      <div class="yoga-pct" id="yogaPct">0%</div>
+      <div class="yoga-progress-outer">
+        <div class="yoga-progress-inner" id="yogaBar" style="width:0%"></div>
+      </div>
+      <div class="yoga-status">Please wait</div>
+    </div>
+    <div class="yoga-dots">
+      <div class="yoga-dot"></div>
+      <div class="yoga-dot"></div>
+      <div class="yoga-dot"></div>
+    </div>
+  </div>`;
+}
+
 function set(p){Object.assign(S,p);render();}
+function mut(p){Object.assign(S,p);}  // update state only, no render
 
 async function loadEntries(){
   set({loading:true});
@@ -207,7 +394,17 @@ async function loadEntries(){
 }
 async function checkSession(){
   const{data}=await sb.auth.getSession();
-  if(data?.session?.user)set({user:data.session.user});
+  if(data?.session?.user){
+    const u=data.session.user;
+    const mobile=u.email.replace('@idy2026.com','');
+    const{data:au}=await sb.from('app_users').select('*').eq('mobile',mobile).single();
+    set({user:u,appUser:au||null});
+  }
+}
+async function loadAppUser(u){
+  const mobile=u.email.replace('@idy2026.com','');
+  const{data:au}=await sb.from('app_users').select('*').eq('mobile',mobile).single();
+  set({appUser:au||null});
 }
 async function doLogin(){
   const mobile=S.loginMobile.trim();
@@ -215,7 +412,10 @@ async function doLogin(){
   const email=mobile+"@idy2026.com";
   const{data,error}=await sb.auth.signInWithPassword({email,password:S.loginPass});
   if(error){const msg=error.message.toLowerCase();if(msg.includes("invalid")||msg.includes("credentials"))return set({loginErr:"Mobile number ya password galat hai"});return set({loginErr:error.message});}
-  if(S.loginPass==="IDY@2026"){set({user:data.user,showLogin:false,loginErr:"",showChangePwd:true});}else{set({user:data.user,showLogin:false,loginErr:""});showToast("Welcome! Ab upload kar sakte hain.","ok");}
+  const u=data.user;
+  await loadAppUser(u);
+  if(S.loginPass==="IDY@2026"){set({showLogin:false,loginErr:"",showChangePwd:true});}
+  else{set({showLogin:false,loginErr:""});showToast("Welcome! Ab upload kar sakte hain.","ok");}
 }
 async function doChangePassword(){
   if(S.newPass.length<6)return set({changePwdErr:"Password kam se kam 6 characters ka hona chahiye"});
@@ -225,6 +425,47 @@ async function doChangePassword(){
   set({showChangePwd:false,newPass:"",newPass2:"",changePwdErr:""});
   showToast("Password change ho gaya! Ab upload kar sakte hain.","ok");
 }
+function genPassword(){
+  const chars='ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789@#';
+  let pwd='';for(let i=0;i<8;i++)pwd+=chars[Math.floor(Math.random()*chars.length)];
+  return pwd;
+}
+
+async function loadAdminUsers(){
+  set({adminLoading:true});
+  const{data}=await sb.from('app_users').select('*').eq('role','district_admin').order('created_at',{ascending:false});
+  set({adminUsers:data||[],adminLoading:false});
+}
+
+async function createDistrictUser(){
+  const errs=[];
+  if(!S.adminDistrict)errs.push('District select karein');
+  if(!S.adminName.trim())errs.push('Naam enter karein');
+  if(!/^\d{10}$/.test(S.adminMobile.trim()))errs.push('Valid 10-digit mobile number');
+  if(errs.length)return set({adminErr:errs.join(' | ')});
+  const mobile=S.adminMobile.trim();
+  const email=mobile+'@idy2026.com';
+  const pwd=genPassword();
+  // Create Supabase auth user
+  const{data,error}=await sb.auth.admin?{data:null,error:{message:'Use service role'}}:{data:null,error:null};
+  // Use signUp instead (anon key supports this with email confirm off)
+  const{data:sd,error:se}=await sb.auth.signUp({email,password:pwd,options:{data:{name:S.adminName}}});
+  if(se&&!se.message.includes('already registered'))return set({adminErr:'Auth error: '+se.message});
+  // Save to app_users
+  const{error:dbe}=await sb.from('app_users').upsert([{mobile,name:S.adminName.trim(),district:S.adminDistrict,role:'district_admin'}],{onConflict:'mobile'});
+  if(dbe)return set({adminErr:'DB error: '+dbe.message});
+  set({adminGenPwd:pwd,adminMobile:'',adminName:'',adminErr:''});
+  showToast('User created!','ok');
+  loadAdminUsers();
+}
+
+async function deleteAdminUser(mobile){
+  if(!confirm('Is user ko delete karna chahte hain?'))return;
+  await sb.from('app_users').delete().eq('mobile',mobile);
+  showToast('User deleted','ok');
+  loadAdminUsers();
+}
+
 async function doLogout(){
   await sb.auth.signOut();set({user:null});showToast('Logged out','ok');
 }
@@ -263,16 +504,22 @@ async function submitEntry(){
   if(S.uType==='news'&&!S.uNewspaper.trim())e.paper='Newspaper name required';
   if(Object.keys(e).length){set({uErrors:e});return;}
   set({uploading:true,pct:5,uErrors:{}});
+  // Show yoga animation overlay
+  const yogaDiv = document.createElement('div');
+  yogaDiv.id = 'yogaContainer';
+  yogaDiv.innerHTML = rYogaOverlay();
+  document.body.appendChild(yogaDiv);
+  startYogaAnimation();
   try{
     let mediaUrl=null,thumbUrl=null;
     if(S.uType==='youtube'){
       mediaUrl=S.uYoutube.trim();
       const id=ytId(mediaUrl);
       thumbUrl=id?`https://img.youtube.com/vi/${id}/hqdefault.jpg`:null;
-      set({pct:90});
+      mut({pct:90});updateYogaProgress(90);
     }else{
-      const r=await uploadCloudinary(S.uFile,p=>set({pct:p}));
-      mediaUrl=r.url;thumbUrl=r.thumb;set({pct:92});
+      const r=await uploadCloudinary(S.uFile,p=>{mut({pct:p});updateYogaProgress(p);});
+      mediaUrl=r.url;thumbUrl=r.thumb;mut({pct:92});updateYogaProgress(92);
     }
     const entry={
       type:S.uType,event_name:S.uEvent.trim(),location:S.uLocation.trim(),
@@ -283,12 +530,14 @@ async function submitEntry(){
     };
     const{error}=await sb.from('idy_entries').insert([entry]);
     if(error)throw error;
-    set({pct:100});
+    mut({pct:100});updateYogaProgress(100);
     await new Promise(r=>setTimeout(r,400));
     set({uploading:false,pct:0,showUpload:false,uFile:null,uFileName:'',uEvent:'',uLocation:'',uDistrict:'',uDate:tod(),uDesc:'',uNewspaper:'',uYoutube:'',uType:'photo'});
     showToast('✅ Uploaded to IDY Wall!','ok');
     loadEntries();
   }catch(err){
+    stopYogaAnimation();
+    const yce=document.getElementById('yogaContainer');if(yce)yce.remove();
     set({uploading:false,pct:0});
     showToast('Upload failed: '+err.message,'er');
   }
@@ -326,6 +575,7 @@ function render(){
     </main>
     ${S.showLogin?rLoginModal():''}
     ${S.showChangePwd?rChangePwdModal():''}
+    ${S.showAdmin?rAdminModal():''}
     ${S.showUpload?rUploadModal():''}
     ${S.lightbox?rLightbox():''}
     ${S.toast?`<div class="toast ${S.toast.type}">${S.toast.msg}</div>`:''}
@@ -334,10 +584,13 @@ function render(){
 }
 
 function rHeader(c){
+  const isSuperAdmin=S.appUser?.role==='super_admin';
+  const isDistAdmin=S.appUser?.role==='district_admin';
   const right=S.user
     ?`<div class="header-right">
-        <div class="user-pill"><div class="dot"></div>${S.user.email.split('@')[0]}</div>
-        <button class="upload-fab" id="openUpload">＋ Upload</button>
+        <div class="user-pill"><div class="dot"></div>${isSuperAdmin?'Super Admin':S.appUser?.name||S.user.email.split('@')[0]}</div>
+        ${isSuperAdmin?`<button class="upload-fab" style="background:var(--green)" id="openAdmin">⚙️ Manage Users</button>`:''}
+        ${(isSuperAdmin||isDistAdmin)?`<button class="upload-fab" id="openUpload">＋ Upload</button>`:''}
         <button class="logout-btn" id="logoutBtn">Logout</button>
       </div>`
     :`<div class="header-right">
@@ -402,6 +655,55 @@ function rChangePwdModal(){
   return`<div class="overlay" id="changePwdOverlay"><div class="modal" style="max-width:420px"><div class="login-body"><div class="login-icon">🔐</div><div class="login-title">Password Set Karein</div><div class="login-sub" style="margin-bottom:20px">Pehli baar login — apna naya password banayein</div><div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:10px;padding:12px 14px;font-size:12px;color:#92400E;margin-bottom:20px;text-align:left">⚠️ Default password use ho raha hai. Security ke liye abhi change karein.</div><div class="fg"><label class="fl">Naya Password *</label><input class="fi" type="password" id="newPass" placeholder="Minimum 6 characters" value="${S.newPass}"/></div><div class="fg"><label class="fl">Password Confirm Karein *</label><input class="fi" type="password" id="newPass2" placeholder="Dobara dalein" value="${S.newPass2}"/></div>${S.changePwdErr?`<div class="err" style="margin-bottom:10px">⚠️ ${S.changePwdErr}</div>`:''}<button class="btn-p" id="doChangePwd">✅ Password Save Karein</button></div></div></div>`;
 }
 
+function rAdminModal(){
+  return`<div class="overlay" id="adminOverlay"><div class="modal" style="max-width:640px">
+    <button class="modal-close" id="closeAdmin">✕</button>
+    <div class="upload-header">
+      <div class="upload-title">⚙️ Manage District Users</div>
+      <div class="upload-sub">Nodal officers ke accounts banao aur manage karo</div>
+    </div>
+    <div class="upload-body">
+      <div class="sec-title">Naya User Banao</div>
+      <div class="two-col">
+        <div class="fg">
+          <label class="fl">📱 Mobile Number *</label>
+          <input class="fi" type="tel" id="aMobile" placeholder="10-digit number" value="${S.adminMobile}" maxlength="10" inputmode="numeric"/>
+        </div>
+        <div class="fg">
+          <label class="fl">👤 Naam *</label>
+          <input class="fi" type="text" id="aName" placeholder="Nodal officer ka naam" value="${S.adminName}"/>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">📍 District *</label>
+        <select class="fsel" id="aDist">
+          <option value="">— Select District —</option>
+          ${DISTRICTS.map(d=>`<option value="${d}" ${S.adminDistrict===d?'selected':''}>${d}</option>`).join('')}
+        </select>
+      </div>
+      ${S.adminErr?`<div class="err" style="margin-bottom:10px">⚠️ ${S.adminErr}</div>`:''}
+      ${S.adminGenPwd?`
+        <div style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:12px;padding:16px;margin-bottom:16px">
+          <div style="font-size:11px;font-weight:700;color:#166534;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">✅ User Created! Password Share Karein:</div>
+          <div style="font-size:22px;font-weight:800;color:#166534;letter-spacing:3px;font-family:'Courier New',monospace">${S.adminGenPwd}</div>
+          <div style="font-size:11px;color:#166534;margin-top:6px;opacity:0.8">Yeh password WhatsApp pe bhej dein — pehli login pe change hoga</div>
+          <button onclick="navigator.clipboard.writeText('${S.adminGenPwd}');this.textContent='✅ Copied!'" style="margin-top:10px;padding:6px 14px;background:#166534;color:white;border:none;border-radius:8px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">📋 Copy Password</button>
+        </div>`:''}
+      <button class="btn-p" id="doCreateUser" style="margin-bottom:0">➕ User Banao</button>
+
+      <div class="sec-title" style="margin-top:24px">Existing Users</div>
+      ${S.adminLoading?'<div style="text-align:center;padding:20px;color:var(--text-secondary)">Loading...</div>':
+        S.adminUsers.length===0?'<div style="text-align:center;padding:20px;color:var(--text-secondary);font-size:13px">Abhi koi district user nahi hai</div>':
+        `<div style="border:1px solid rgba(0,0,0,0.07);border-radius:12px;overflow:hidden">
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead><tr style="background:#F9FAFB"><th style="padding:10px 14px;text-align:left;font-weight:600;color:var(--text-secondary);font-size:11px;letter-spacing:0.5px">NAAM</th><th style="padding:10px 14px;text-align:left;font-weight:600;color:var(--text-secondary);font-size:11px;letter-spacing:0.5px">MOBILE</th><th style="padding:10px 14px;text-align:left;font-weight:600;color:var(--text-secondary);font-size:11px;letter-spacing:0.5px">DISTRICT</th><th style="padding:10px 14px;text-align:left;font-weight:600;color:var(--text-secondary);font-size:11px;letter-spacing:0.5px"></th></tr></thead>
+            <tbody>${S.adminUsers.map((u,i)=>`<tr style="border-top:1px solid rgba(0,0,0,0.05);${i%2===1?'background:#FAFAFA':''}"><td style="padding:10px 14px;font-weight:500">${u.name||'-'}</td><td style="padding:10px 14px;font-family:monospace">${u.mobile}</td><td style="padding:10px 14px"><span class="dist-badge ${dc(u.district)}">${u.district||'-'}</span></td><td style="padding:10px 14px"><button onclick="deleteAdminUser('${u.mobile}')" style="background:none;border:1px solid #FCA5A5;color:#DC2626;padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif">Delete</button></td></tr>`).join('')}</tbody>
+          </table>
+        </div>`}
+    </div>
+  </div></div>`;
+}
+
 function rUploadModal(){
   const e=S.uErrors;const isYT=S.uType==='youtube';const isNews=S.uType==='news';const isVid=S.uType==='video';
   return`<div class="overlay" id="uploadOverlay"><div class="modal" style="max-width:610px"><button class="modal-close" id="closeUpload">✕</button><div class="upload-header"><div class="upload-title">Upload to IDY Wall</div><div class="upload-sub">Har entry Uttarakhand ki yoga story ka hissa ban jaayegi 🙏</div></div><div class="upload-body"><div class="sec-title">Content Type</div><div class="type-grid">${[{v:'photo',i:'📷',l:'Photo'},{v:'video',i:'🎥',l:'Video'},{v:'youtube',i:'▶️',l:'YouTube'},{v:'news',i:'📰',l:'News'}].map(t=>`<div class="t-opt ${S.uType===t.v?'sel':''}" data-utype="${t.v}"><div class="t-icon">${t.i}</div><div class="t-name">${t.l}</div></div>`).join('')}</div><div class="sec-title">Event Details</div><div class="fg"><label class="fl">Event Name *</label><input class="fi" id="uEvent" type="text" placeholder="e.g. IDY 2026 Main Event, Char Dham Yoga Sangam..." value="${S.uEvent}" maxlength="120"/>${e.ev?`<div class="err">${e.ev}</div>`:''}</div><div class="two-col"><div class="fg"><label class="fl">Location *</label><input class="fi" id="uLoc" type="text" placeholder="Venue / Place" value="${S.uLocation}"/>${e.loc?`<div class="err">${e.loc}</div>`:''}</div><div class="fg"><label class="fl">Date *</label><input class="fi" id="uDate" type="date" value="${S.uDate}"/>${e.date?`<div class="err">${e.date}</div>`:''}</div></div><div class="fg"><label class="fl">District *</label><select class="fsel" id="uDist"><option value="">— Select District —</option>${DISTRICTS.map(d=>`<option value="${d}" ${S.uDistrict===d?'selected':''}>${d}</option>`).join('')}</select>${e.dist?`<div class="err">${e.dist}</div>`:''}</div>${isNews?`<div class="fg"><label class="fl">Newspaper Name *</label><input class="fi" id="uPaper" type="text" placeholder="e.g. Amar Ujala, Dainik Jagran..." value="${S.uNewspaper}"/>${e.paper?`<div class="err">${e.paper}</div>`:''}</div>`:''}<div class="fg"><label class="fl">Description (optional)</label><textarea class="fta" id="uDesc" placeholder="Brief description...">${S.uDesc}</textarea></div><div class="sec-title">Media</div>${isYT?`<div class="fg"><label class="fl">YouTube URL *</label><input class="fi" id="uYT" type="url" placeholder="https://youtube.com/watch?v=..." value="${S.uYoutube}"/>${e.yt?`<div class="err">${e.yt}</div>`:''}</div>`:`<div class="up-area" id="upArea"><input type="file" id="fileIn" accept="${isVid?'video/*':'image/*'}"/><div class="up-icon">${isVid?'🎥':'📸'}</div><div class="up-text"><strong>Click to select</strong> or drag & drop<br><small style="opacity:0.7">${isVid?'MP4, MOV — uploaded as-is':'JPG, PNG, WEBP'}</small></div>${S.uFileName?`<div class="up-preview">✅ ${S.uFileName}</div>`:''}</div>${e.file?`<div class="err" style="margin-top:5px">${e.file}</div>`:''}`}${S.uploading?`<div class="prog-wrap"><div class="prog-label">Uploading to Cloudinary... ${S.pct}%</div><div class="prog-outer"><div class="prog-inner" style="width:${S.pct}%"></div></div></div>`:''}<button class="btn-p" id="doUpload" ${S.uploading?'disabled':''}>${S.uploading?'⏳ Uploading...':'🙏 Submit to IDY Wall'}</button><button class="btn-s" id="cancelUpload">Cancel</button></div></div></div>`;
@@ -420,25 +722,32 @@ function attachEvents(){
   q('loginBtn',el=>el.addEventListener('click',()=>set({showLogin:true,loginErr:''})));
   q('closeLogin',el=>el.addEventListener('click',()=>set({showLogin:false})));
   q('loginOverlay',el=>el.addEventListener('click',ev=>{if(ev.target===el)set({showLogin:false});}));
-  q('lMobile',el=>el.addEventListener('input',ev=>{S.loginMobile=ev.target.value.replace(/\D/g,'');}));
+  q('openAdmin',el=>el.addEventListener('click',()=>{set({showAdmin:true,adminGenPwd:'',adminErr:''});loadAdminUsers();}));
+  q('closeAdmin',el=>el.addEventListener('click',()=>set({showAdmin:false})));
+  q('adminOverlay',el=>el.addEventListener('click',ev=>{if(ev.target===el)set({showAdmin:false});}));
+  q('aMobile',el=>el.addEventListener('input',ev=>mut({adminMobile:ev.target.value.replace(/\D/g,'')})));
+  q('aName',el=>el.addEventListener('input',ev=>mut({adminName:ev.target.value})));
+  q('aDist',el=>el.addEventListener('change',ev=>mut({adminDistrict:ev.target.value})));
+  q('doCreateUser',el=>el.addEventListener('click',async()=>{el.disabled=true;el.textContent='Creating...';await createDistrictUser();el.disabled=false;el.textContent='➕ User Banao';}));
+  q('lMobile',el=>el.addEventListener('input',ev=>{S.loginMobile=ev.target.value.replace(/\D/g,'');/* no re-render */}));
   q('lPass',el=>{el.addEventListener('input',ev=>{S.loginPass=ev.target.value;});el.addEventListener('keydown',ev=>{if(ev.key==='Enter')document.getElementById('doLogin')?.click();});});
   q('doLogin',el=>el.addEventListener('click',async()=>{el.disabled=true;el.textContent='Logging in...';await doLogin();el.disabled=false;el.textContent='Login →';}));
   q('doChangePwd',el=>el.addEventListener('click',async()=>{el.disabled=true;el.textContent='Saving...';await doChangePassword();el.disabled=false;el.textContent='✅ Password Save Karein';}));
-  q('newPass',el=>el.addEventListener('input',ev=>set({newPass:ev.target.value})));
-  q('newPass2',el=>el.addEventListener('input',ev=>set({newPass2:ev.target.value})));
+  q('newPass',el=>el.addEventListener('input',ev=>mut({newPass:ev.target.value})));
+  q('newPass2',el=>el.addEventListener('input',ev=>mut({newPass2:ev.target.value})));
   q('openUpload',el=>el.addEventListener('click',()=>set({showUpload:true,uErrors:{}})));
   q('closeUpload',el=>el.addEventListener('click',()=>set({showUpload:false})));
   q('cancelUpload',el=>el.addEventListener('click',()=>set({showUpload:false})));
   q('uploadOverlay',el=>el.addEventListener('click',ev=>{if(ev.target===el)set({showUpload:false});}));
   q('logoutBtn',el=>el.addEventListener('click',doLogout));
   document.querySelectorAll('[data-utype]').forEach(el=>el.addEventListener('click',()=>set({uType:el.dataset.utype,uFile:null,uFileName:'',uErrors:{}})));
-  q('uEvent',el=>el.addEventListener('input',ev=>set({uEvent:ev.target.value})));
-  q('uLoc',el=>el.addEventListener('input',ev=>set({uLocation:ev.target.value})));
-  q('uDate',el=>el.addEventListener('change',ev=>set({uDate:ev.target.value})));
-  q('uDist',el=>el.addEventListener('change',ev=>set({uDistrict:ev.target.value})));
-  q('uDesc',el=>el.addEventListener('input',ev=>set({uDesc:ev.target.value})));
-  q('uPaper',el=>el.addEventListener('input',ev=>set({uNewspaper:ev.target.value})));
-  q('uYT',el=>el.addEventListener('input',ev=>set({uYoutube:ev.target.value})));
+  q('uEvent',el=>el.addEventListener('input',ev=>mut({uEvent:ev.target.value})));
+  q('uLoc',el=>el.addEventListener('input',ev=>mut({uLocation:ev.target.value})));
+  q('uDate',el=>el.addEventListener('change',ev=>mut({uDate:ev.target.value})));
+  q('uDist',el=>el.addEventListener('change',ev=>mut({uDistrict:ev.target.value})));
+  q('uDesc',el=>el.addEventListener('input',ev=>mut({uDesc:ev.target.value})));
+  q('uPaper',el=>el.addEventListener('input',ev=>mut({uNewspaper:ev.target.value})));
+  q('uYT',el=>el.addEventListener('input',ev=>mut({uYoutube:ev.target.value})));
   q('fileIn',el=>el.addEventListener('change',ev=>{const f=ev.target.files[0];if(f)set({uFile:f,uFileName:f.name});}));
   q('doUpload',el=>el.addEventListener('click',submitEntry));
   document.querySelectorAll('[data-li]').forEach(el=>el.addEventListener('click',()=>set({lightbox:{type:'img',url:decodeURIComponent(el.dataset.li),cap:decodeURIComponent(el.dataset.lc||'')}})));
@@ -451,6 +760,16 @@ function q(id,fn){const el=document.getElementById(id);if(el)fn(el);}
 
 async function init(){render();await checkSession();await loadEntries();}
 init();
+</script>
+
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js')
+      .then(()=>console.log('SW registered'))
+      .catch(e=>console.log('SW error',e));
+  });
+}
 </script>
 </body>
 </html>
