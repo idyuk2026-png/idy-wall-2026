@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Uttarakhand IDY Wall 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi&family=Cinzel:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --saffron:#E8610A;--saffron-light:#FF8C38;--saffron-glow:rgba(232,97,10,0.11);
+  --green:#1A5C35;--cream:#FBF5EB;--dark:#0D1A0F;
+  --text-primary:#1C1C1C;--text-secondary:#6B6B6B;--border:rgba(232,97,10,0.1);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--cream);font-family:'DM Sans',sans-serif;color:var(--text-primary);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(circle at 80% 10%,rgba(232,97,10,0.05) 0%,transparent 50%),radial-gradient(circle at 10% 80%,rgba(26,92,53,0.06) 0%,transparent 50%);pointer-events:none;z-index:0;}
+
+/* HEADER */
+.header{position:relative;z-index:10;background:linear-gradient(160deg,#0A1A0C 0%,#0F2010 35%,#1A0E00 100%);overflow:hidden;}
+.header-geo{position:absolute;inset:0;background-image:radial-gradient(circle at 20% 50%,rgba(232,97,10,0.08) 0%,transparent 45%),radial-gradient(circle at 80% 50%,rgba(26,92,53,0.12) 0%,transparent 45%);pointer-events:none;}
+.header-top{position:relative;z-index:5;display:flex;align-items:center;justify-content:space-between;padding:20px 28px;}
+.header-flag{display:flex;flex-direction:column;gap:2px;width:28px;}
+.flag-s{height:4px;border-radius:2px;background:#FF6B00;}
+.flag-w{height:4px;border-radius:2px;background:rgba(255,255,255,0.88);}
+.flag-g{height:4px;border-radius:2px;background:#138808;}
+.header-right{display:flex;align-items:center;gap:10px;}
+.login-btn{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);color:rgba(255,255,255,0.75);padding:9px 18px;border-radius:100px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.25s;font-family:'DM Sans',sans-serif;}
+.login-btn:hover{background:rgba(232,97,10,0.2);border-color:var(--saffron);color:#fff;}
+.user-pill{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:100px;padding:7px 14px;font-size:12px;color:rgba(255,255,255,0.7);font-weight:500;}
+.user-pill .dot{width:7px;height:7px;background:#4ADE80;border-radius:50%;}
+.upload-fab{display:flex;align-items:center;gap:7px;background:var(--saffron);border:none;border-radius:100px;padding:10px 20px;font-size:13px;font-weight:600;color:white;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;box-shadow:0 4px 16px rgba(232,97,10,0.4);}
+.upload-fab:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(232,97,10,0.5);}
+.logout-btn{background:transparent;border:1px solid rgba(255,255,255,0.12);border-radius:100px;padding:9px 14px;font-size:12px;color:rgba(255,255,255,0.5);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;}
+.logout-btn:hover{color:rgba(255,255,255,0.8);}
+.header-body{position:relative;z-index:5;text-align:center;padding:8px 24px 44px;}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;background:rgba(232,97,10,0.15);border:1px solid rgba(232,97,10,0.25);border-radius:100px;padding:6px 16px;margin-bottom:20px;animation:fadeDown 0.5s ease both;}
+.eyebrow .pulse{width:6px;height:6px;background:var(--saffron-light);border-radius:50%;animation:pulse 2s infinite;}
+.eyebrow span{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--saffron-light);}
+.h-title{font-family:'Cinzel',serif;font-size:clamp(30px,5.5vw,58px);font-weight:900;color:#fff;line-height:1.05;letter-spacing:-1px;animation:fadeDown 0.6s ease both;}
+.h-title .cs{color:var(--saffron-light);}.h-title .cg{color:#6EE7A0;}
+.h-deva{font-family:'Tiro Devanagari Hindi',serif;font-size:clamp(13px,1.8vw,16px);color:rgba(255,255,255,0.48);margin-top:10px;animation:fadeDown 0.7s ease both;}
+.h-rule{width:60px;height:2px;background:linear-gradient(90deg,transparent,var(--saffron),transparent);margin:18px auto;animation:fadeDown 0.75s ease both;}
+.stats-row{display:flex;gap:0;justify-content:center;flex-wrap:wrap;animation:fadeDown 0.85s ease both;}
+.stat-cell{display:flex;flex-direction:column;align-items:center;padding:0 24px;border-right:1px solid rgba(255,255,255,0.07);}
+.stat-cell:last-child{border-right:none;}
+.stat-n{font-family:'Cinzel',serif;font-size:28px;font-weight:700;color:var(--saffron-light);line-height:1;}
+.stat-l{font-size:10px;color:rgba(255,255,255,0.38);letter-spacing:1.8px;text-transform:uppercase;margin-top:5px;}
+
+/* FILTER */
+.filter-bar{position:sticky;top:0;z-index:50;background:rgba(251,245,235,0.94);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);padding:12px 24px;}
+.filter-inner{max-width:1440px;margin:0 auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.filter-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-secondary);margin-right:4px;flex-shrink:0;}
+.f-btn{display:flex;align-items:center;gap:5px;padding:7px 15px;border-radius:100px;border:1.5px solid rgba(0,0,0,0.08);background:#fff;font-size:12.5px;font-weight:500;color:var(--text-secondary);cursor:pointer;transition:all 0.18s;font-family:'DM Sans',sans-serif;white-space:nowrap;}
+.f-btn:hover{border-color:var(--saffron);color:var(--saffron);}
+.f-btn.active{background:var(--saffron);border-color:var(--saffron);color:#fff;font-weight:600;}
+.f-cnt{background:rgba(0,0,0,0.06);color:var(--text-secondary);border-radius:100px;padding:1px 6px;font-size:10px;font-weight:700;}
+.f-btn.active .f-cnt{background:rgba(255,255,255,0.25);color:#fff;}
+
+/* MAIN */
+.main{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:26px 14px 80px;}
+.masonry{columns:4 260px;column-gap:14px;}
+@media(max-width:900px){.masonry{columns:2 220px;}}
+@media(max-width:480px){.masonry{columns:1;}}
+
+/* CARD */
+.card{break-inside:avoid;display:block;background:#fff;border-radius:16px;overflow:hidden;margin-bottom:14px;border:1px solid rgba(0,0,0,0.05);box-shadow:0 2px 8px rgba(0,0,0,0.06);transition:transform 0.3s ease,box-shadow 0.3s ease;animation:cardIn 0.4s ease both;}
+.card:hover{transform:translateY(-5px);box-shadow:0 16px 40px rgba(0,0,0,0.13);}
+.card-media{position:relative;width:100%;overflow:hidden;background:#EDE0CC;cursor:pointer;}
+.card-media img{width:100%;height:auto;display:block;transition:transform 0.4s ease;}
+.card:hover .card-media img{transform:scale(1.04);}
+.type-pill{position:absolute;top:10px;left:10px;display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:100px;font-size:10.5px;font-weight:700;backdrop-filter:blur(6px);}
+.pp{background:rgba(232,97,10,0.88);color:#fff;}
+.pv{background:rgba(185,28,28,0.88);color:#fff;}
+.py{background:rgba(185,28,28,0.92);color:#fff;}
+.pn{background:rgba(30,64,175,0.88);color:#fff;}
+.play-over{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.22);transition:background 0.25s;cursor:pointer;}
+.card:hover .play-over{background:rgba(0,0,0,0.38);}
+.play-circle{width:52px;height:52px;background:rgba(255,255,255,0.95);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,0.25);}
+.play-circle svg{width:20px;height:20px;fill:var(--saffron);margin-left:3px;}
+.vid-ph{background:linear-gradient(135deg,#1a1a1a,#2d1500);min-height:160px;display:flex;align-items:center;justify-content:center;}
+.card-body{padding:14px 16px 6px;}
+.card-event{font-size:14px;font-weight:600;color:var(--text-primary);line-height:1.4;margin-bottom:7px;}
+.card-desc{font-size:12px;color:var(--text-secondary);line-height:1.55;margin-bottom:9px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+.card-meta{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}
+.meta-row{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--text-secondary);}
+.meta-row svg{width:11px;height:11px;flex-shrink:0;opacity:0.55;}
+.dist-badge{display:inline-block;padding:3px 10px;border-radius:100px;font-size:10.5px;font-weight:600;}
+.card-footer{padding:9px 16px 12px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(0,0,0,0.04);}
+.footer-date{font-size:10.5px;color:rgba(0,0,0,0.3);font-weight:500;}
+.footer-paper{font-size:11px;color:#1E40AF;font-weight:600;}
+
+.d-dehradun{background:#FEF3C7;color:#92400E;}.d-haridwar{background:#FEE2E2;color:#991B1B;}
+.d-nainital{background:#DBEAFE;color:#1E40AF;}.d-almora{background:#D1FAE5;color:#065F46;}
+.d-pauri{background:#EDE9FE;color:#5B21B6;}.d-tehri{background:#CFFAFE;color:#155E75;}
+.d-chamoli{background:#FCE7F3;color:#9D174D;}.d-uttarkashi{background:#FEF9C3;color:#713F12;}
+.d-pithoragarh{background:#E0F2FE;color:#0C4A6E;}.d-bageshwar{background:#F0FDF4;color:#14532D;}
+.d-champawat{background:#FFF7ED;color:#7C2D12;}.d-udham{background:#F5F3FF;color:#4C1D95;}
+.d-rudraprayag{background:#ECFDF5;color:#064E3B;}.d-def{background:#F3F4F6;color:#374151;}
+
+.empty{text-align:center;padding:80px 20px;}
+.empty-icon{font-size:56px;margin-bottom:16px;opacity:0.35;}
+.empty-title{font-family:'Cinzel',serif;font-size:18px;color:var(--text-secondary);margin-bottom:6px;}
+.empty-sub{font-size:13px;color:rgba(0,0,0,0.3);}
+.loading{text-align:center;padding:80px 20px;}
+.spinner{width:38px;height:38px;border:3px solid rgba(232,97,10,0.12);border-top-color:var(--saffron);border-radius:50%;animation:spin 0.75s linear infinite;margin:0 auto 14px;}
+
+/* MODALS */
+.overlay{position:fixed;inset:0;background:rgba(5,10,6,0.88);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(5px);animation:fadeIn 0.18s ease;}
+.modal{background:#fff;border-radius:20px;width:100%;max-height:92vh;overflow-y:auto;position:relative;animation:scaleIn 0.25s ease;}
+.modal-close{position:absolute;top:16px;right:16px;width:30px;height:30px;background:rgba(0,0,0,0.06);border:none;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--text-secondary);z-index:5;}
+.modal-close:hover{background:rgba(0,0,0,0.12);}
+.login-body{padding:44px 36px;text-align:center;max-width:420px;}
+.login-icon{width:60px;height:60px;background:linear-gradient(135deg,var(--saffron-glow),rgba(26,92,53,0.1));border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:26px;}
+.login-title{font-family:'Cinzel',serif;font-size:21px;font-weight:700;color:var(--dark);margin-bottom:5px;}
+.login-sub{font-size:12.5px;color:var(--text-secondary);margin-bottom:28px;}
+.upload-header{padding:26px 28px 20px;border-bottom:1px solid rgba(0,0,0,0.06);}
+.upload-title{font-family:'Cinzel',serif;font-size:19px;font-weight:700;color:var(--dark);}
+.upload-sub{font-size:12px;color:var(--text-secondary);margin-top:4px;}
+.upload-body{padding:22px 28px 28px;}
+.fg{margin-bottom:15px;}
+.fl{display:block;font-size:11px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:var(--text-secondary);margin-bottom:6px;}
+.fi{width:100%;padding:11px 14px;border:1.5px solid rgba(0,0,0,0.09);border-radius:10px;font-size:13.5px;font-family:'DM Sans',sans-serif;color:var(--text-primary);transition:border-color 0.18s;background:#FAFAFA;}
+.fi:focus{outline:none;border-color:var(--saffron);background:#fff;}
+.fsel{width:100%;padding:11px 14px;border:1.5px solid rgba(0,0,0,0.09);border-radius:10px;font-size:13.5px;font-family:'DM Sans',sans-serif;color:var(--text-primary);background:#FAFAFA;appearance:none;cursor:pointer;}
+.fsel:focus{outline:none;border-color:var(--saffron);}
+.fta{width:100%;padding:11px 14px;border:1.5px solid rgba(0,0,0,0.09);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text-primary);resize:vertical;min-height:75px;background:#FAFAFA;}
+.fta:focus{outline:none;border-color:var(--saffron);}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.err{font-size:11px;color:#DC2626;margin-top:4px;}
+.type-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px;}
+.t-opt{border:1.5px solid rgba(0,0,0,0.08);border-radius:11px;padding:11px 6px;text-align:center;cursor:pointer;transition:all 0.18s;background:#fff;}
+.t-opt:hover{border-color:var(--saffron);}
+.t-opt.sel{border-color:var(--saffron);background:var(--saffron-glow);}
+.t-icon{font-size:21px;margin-bottom:4px;}
+.t-name{font-size:10.5px;font-weight:600;color:var(--text-secondary);}
+.t-opt.sel .t-name{color:var(--saffron);}
+.up-area{border:2px dashed rgba(232,97,10,0.28);border-radius:12px;padding:22px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--saffron-glow);position:relative;}
+.up-area:hover{border-color:var(--saffron);}
+.up-area input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.up-icon{font-size:28px;margin-bottom:7px;}
+.up-text{font-size:12.5px;color:var(--text-secondary);}
+.up-text strong{color:var(--saffron);}
+.up-preview{margin-top:10px;font-size:12px;color:var(--green);font-weight:600;}
+.prog-wrap{margin-top:14px;}
+.prog-label{font-size:12px;color:var(--text-secondary);margin-bottom:5px;}
+.prog-outer{height:5px;background:rgba(0,0,0,0.07);border-radius:100px;overflow:hidden;}
+.prog-inner{height:100%;background:linear-gradient(90deg,var(--saffron),var(--green));border-radius:100px;transition:width 0.3s ease;}
+.sec-title{font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--saffron);margin:18px 0 12px;display:flex;align-items:center;gap:8px;}
+.sec-title::after{content:'';flex:1;height:1px;background:rgba(232,97,10,0.12);}
+.btn-p{width:100%;padding:13px;background:linear-gradient(135deg,var(--saffron),#C04F00);color:#fff;border:none;border-radius:11px;font-size:14.5px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all 0.25s;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-p:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(232,97,10,0.32);}
+.btn-p:disabled{opacity:0.55;cursor:not-allowed;transform:none;box-shadow:none;}
+.btn-s{width:100%;padding:11px;background:transparent;color:var(--text-secondary);border:1.5px solid rgba(0,0,0,0.09);border-radius:11px;font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all 0.18s;margin-top:7px;}
+.btn-s:hover{border-color:var(--saffron);color:var(--saffron);}
+
+/* LIGHTBOX */
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,0.96);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn 0.18s ease;}
+.lb-inner{max-width:960px;width:100%;animation:scaleIn 0.25s ease;}
+.lb-inner img{width:100%;height:auto;border-radius:12px;max-height:72vh;object-fit:contain;}
+.lb-inner video{width:100%;border-radius:12px;max-height:72vh;}
+.lb-inner iframe{width:100%;aspect-ratio:16/9;border-radius:12px;border:none;}
+.lb-cap{color:rgba(255,255,255,0.6);text-align:center;margin-top:14px;font-size:13px;}
+.lb-close{position:absolute;top:18px;right:18px;background:rgba(255,255,255,0.08);border:none;color:#fff;width:38px;height:38px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.lb-close:hover{background:rgba(255,255,255,0.15);}
+
+.toast{position:fixed;bottom:24px;right:24px;background:#111;color:#fff;padding:13px 18px;border-radius:11px;font-size:13.5px;font-weight:500;z-index:9999;display:flex;align-items:center;gap:9px;box-shadow:0 8px 24px rgba(0,0,0,0.28);animation:slideUp 0.28s ease;max-width:320px;}
+.toast.ok{border-left:3px solid #22C55E;}.toast.er{border-left:3px solid #EF4444;}
+
+@keyframes fadeDown{from{opacity:0;transform:translateY(-14px);}to{opacity:1;transform:translateY(0);}}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+@keyframes scaleIn{from{opacity:0;transform:scale(0.96);}to{opacity:1;transform:scale(1);}}
+@keyframes cardIn{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+@keyframes spin{to{transform:rotate(360deg);}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.4;transform:scale(0.75);}}
+@keyframes slideUp{from{transform:translateY(16px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const SUPABASE_URL='https://yncnypnscijzzqannqaj.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InluY255cG5zY2lqenpxYW5ucWFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NjcyOTcsImV4cCI6MjA5NjI0MzI5N30.xuuix47WJ5F3S4Hmh9Xy0EaGESU2JDmzvaIlhWVQJFI';
+const CLOUD_NAME='dfs8d5r1e';
+const UPLOAD_PRESET='idy2026';
+const CL_URL=`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`;
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const DISTRICTS=['Dehradun','Haridwar','Nainital','Almora','Pauri Garhwal','Tehri Garhwal','Chamoli','Uttarkashi','Pithoragarh','Bageshwar','Champawat','Udham Singh Nagar','Rudraprayag'];
+
+const S={
+  entries:[],loading:true,filter:'all',user:null,
+  showLogin:false,loginMobile:'',loginPass:'',loginErr:'',
+  showChangePwd:false,newPass:'',newPass2:'',changePwdErr:'',changePwdOk:false,
+  showUpload:false,uType:'photo',uFile:null,uFileName:'',
+  uEvent:'',uLocation:'',uDistrict:'',uDate:tod(),
+  uDesc:'',uNewspaper:'',uYoutube:'',
+  uErrors:{},uploading:false,pct:0,
+  lightbox:null,toast:null
+};
+function tod(){return new Date().toISOString().split('T')[0];}
+function set(p){Object.assign(S,p);render();}
+
+async function loadEntries(){
+  set({loading:true});
+  const{data}=await sb.from('idy_entries').select('*').order('created_at',{ascending:false});
+  set({loading:false,entries:data||[]});
+}
+async function checkSession(){
+  const{data}=await sb.auth.getSession();
+  if(data?.session?.user)set({user:data.session.user});
+}
+async function doLogin(){
+  const mobile=S.loginMobile.trim();
+  if(!/^\d{10}$/.test(mobile))return set({loginErr:"Valid 10-digit mobile number enter karein"});
+  const email=mobile+"@idy2026.com";
+  const{data,error}=await sb.auth.signInWithPassword({email,password:S.loginPass});
+  if(error){const msg=error.message.toLowerCase();if(msg.includes("invalid")||msg.includes("credentials"))return set({loginErr:"Mobile number ya password galat hai"});return set({loginErr:error.message});}
+  if(S.loginPass==="IDY@2026"){set({user:data.user,showLogin:false,loginErr:"",showChangePwd:true});}else{set({user:data.user,showLogin:false,loginErr:""});showToast("Welcome! Ab upload kar sakte hain.","ok");}
+}
+async function doChangePassword(){
+  if(S.newPass.length<6)return set({changePwdErr:"Password kam se kam 6 characters ka hona chahiye"});
+  if(S.newPass!==S.newPass2)return set({changePwdErr:"Dono passwords match nahi kar rahe"});
+  const{error}=await sb.auth.updateUser({password:S.newPass});
+  if(error)return set({changePwdErr:error.message});
+  set({showChangePwd:false,newPass:"",newPass2:"",changePwdErr:""});
+  showToast("Password change ho gaya! Ab upload kar sakte hain.","ok");
+}
+async function doLogout(){
+  await sb.auth.signOut();set({user:null});showToast('Logged out','ok');
+}
+
+async function uploadCloudinary(file,onPct){
+  return new Promise((res,rej)=>{
+    const fd=new FormData();
+    fd.append('file',file);fd.append('upload_preset',UPLOAD_PRESET);fd.append('folder','idy2026');
+    const xhr=new XMLHttpRequest();
+    xhr.open('POST',CL_URL);
+    xhr.upload.onprogress=e=>{if(e.lengthComputable)onPct(Math.round(e.loaded/e.total*85));};
+    xhr.onload=()=>{
+      if(xhr.status===200){
+        const r=JSON.parse(xhr.responseText);
+        const thumb=r.resource_type==='video'
+          ?r.secure_url.replace('/upload/','/upload/w_640,h_360,c_fill,f_jpg/')
+          :r.secure_url;
+        res({url:r.secure_url,thumb});
+      }else rej(new Error('Upload failed'));
+    };
+    xhr.onerror=()=>rej(new Error('Network error'));
+    xhr.send(fd);
+  });
+}
+
+function ytId(url){const m=url.match(/(?:youtu\.be\/|v=|embed\/)([^&?/]+)/);return m?m[1]:null;}
+
+async function submitEntry(){
+  const e={};
+  if(!S.uEvent.trim())e.ev='Event name required';
+  if(!S.uLocation.trim())e.loc='Location required';
+  if(!S.uDistrict)e.dist='Select district';
+  if(!S.uDate)e.date='Date required';
+  if(S.uType!=='youtube'&&!S.uFile)e.file='Select a file';
+  if(S.uType==='youtube'&&!S.uYoutube.trim())e.yt='YouTube URL required';
+  if(S.uType==='news'&&!S.uNewspaper.trim())e.paper='Newspaper name required';
+  if(Object.keys(e).length){set({uErrors:e});return;}
+  set({uploading:true,pct:5,uErrors:{}});
+  try{
+    let mediaUrl=null,thumbUrl=null;
+    if(S.uType==='youtube'){
+      mediaUrl=S.uYoutube.trim();
+      const id=ytId(mediaUrl);
+      thumbUrl=id?`https://img.youtube.com/vi/${id}/hqdefault.jpg`:null;
+      set({pct:90});
+    }else{
+      const r=await uploadCloudinary(S.uFile,p=>set({pct:p}));
+      mediaUrl=r.url;thumbUrl=r.thumb;set({pct:92});
+    }
+    const entry={
+      type:S.uType,event_name:S.uEvent.trim(),location:S.uLocation.trim(),
+      district:S.uDistrict,event_date:S.uDate,description:S.uDesc.trim()||null,
+      newspaper_name:S.uType==='news'?S.uNewspaper.trim():null,
+      media_url:mediaUrl,thumbnail_url:thumbUrl,
+      uploaded_by:S.user.email,created_at:new Date().toISOString()
+    };
+    const{error}=await sb.from('idy_entries').insert([entry]);
+    if(error)throw error;
+    set({pct:100});
+    await new Promise(r=>setTimeout(r,400));
+    set({uploading:false,pct:0,showUpload:false,uFile:null,uFileName:'',uEvent:'',uLocation:'',uDistrict:'',uDate:tod(),uDesc:'',uNewspaper:'',uYoutube:'',uType:'photo'});
+    showToast('✅ Uploaded to IDY Wall!','ok');
+    loadEntries();
+  }catch(err){
+    set({uploading:false,pct:0});
+    showToast('Upload failed: '+err.message,'er');
+  }
+}
+
+function showToast(msg,type){
+  set({toast:{msg,type}});
+  setTimeout(()=>set({toast:null}),3500);
+}
+function fmtDate(d){if(!d)return'';return new Date(d).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});}
+function dc(d){
+  if(!d)return'd-def';
+  const k=d.toLowerCase().replace(/\s+/g,'');
+  const m={dehradun:'d-dehradun',haridwar:'d-haridwar',nainital:'d-nainital',almora:'d-almora',paurigarhwal:'d-pauri',tehrigarhwal:'d-tehri',chamoli:'d-chamoli',uttarkashi:'d-uttarkashi',pithoragarh:'d-pithoragarh',bageshwar:'d-bageshwar',champawat:'d-champawat',udhamsinghnagar:'d-udham',rudraprayag:'d-rudraprayag'};
+  return m[k]||'d-def';
+}
+function cnts(){
+  const all=S.entries.length;
+  const dists=new Set(S.entries.map(e=>e.district).filter(Boolean)).size;
+  const photos=S.entries.filter(e=>e.type==='photo').length;
+  const vids=S.entries.filter(e=>e.type==='video'||e.type==='youtube').length;
+  const news=S.entries.filter(e=>e.type==='news').length;
+  return{all,dists,photos,vids,news,yt:S.entries.filter(e=>e.type==='youtube').length};
+}
+
+function render(){
+  const app=document.getElementById('app');
+  const filtered=S.filter==='all'?S.entries:S.entries.filter(e=>e.type===S.filter);
+  const c=cnts();
+  app.innerHTML=`
+    ${rHeader(c)}
+    ${rFilter(c)}
+    <main class="main">
+      ${S.loading?rLoading():filtered.length===0?rEmpty():rMasonry(filtered)}
+    </main>
+    ${S.showLogin?rLoginModal():''}
+    ${S.showChangePwd?rChangePwdModal():''}
+    ${S.showUpload?rUploadModal():''}
+    ${S.lightbox?rLightbox():''}
+    ${S.toast?`<div class="toast ${S.toast.type}">${S.toast.msg}</div>`:''}
+  `;
+  attachEvents();
+}
+
+function rHeader(c){
+  const right=S.user
+    ?`<div class="header-right">
+        <div class="user-pill"><div class="dot"></div>${S.user.email.split('@')[0]}</div>
+        <button class="upload-fab" id="openUpload">＋ Upload</button>
+        <button class="logout-btn" id="logoutBtn">Logout</button>
+      </div>`
+    :`<div class="header-right">
+        <button class="login-btn" id="loginBtn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          Nodal Login
+        </button>
+      </div>`;
+  return`<header class="header">
+    <div class="header-geo"></div>
+    <div class="header-top">
+      <div class="header-flag"><div class="flag-s"></div><div class="flag-w"></div><div class="flag-g"></div></div>
+      ${right}
+    </div>
+    <div class="header-body">
+      <div class="eyebrow"><div class="pulse"></div><span>International Day of Yoga · 21 June 2026</span></div>
+      <h1 class="h-title"><span class="cs">Uttarakhand</span><br>IDY <span class="cg">Wall</span></h1>
+      <p class="h-deva">देवभूमि से योग की आवाज़ — उत्तराखंड योग महोत्सव २०२६</p>
+      <div class="h-rule"></div>
+      <div class="stats-row">
+        <div class="stat-cell"><div class="stat-n">${c.all}</div><div class="stat-l">Entries</div></div>
+        <div class="stat-cell"><div class="stat-n">${c.dists}</div><div class="stat-l">Districts</div></div>
+        <div class="stat-cell"><div class="stat-n">${c.photos}</div><div class="stat-l">Photos</div></div>
+        <div class="stat-cell"><div class="stat-n">${c.vids}</div><div class="stat-l">Videos</div></div>
+        <div class="stat-cell"><div class="stat-n">${c.news}</div><div class="stat-l">News</div></div>
+      </div>
+    </div>
+  </header>`;
+}
+
+function rFilter(c){
+  const fs=[{v:'all',l:'All',i:'🌸',n:c.all},{v:'photo',l:'Photos',i:'📷',n:c.photos},{v:'video',l:'Videos',i:'🎥',n:c.vids},{v:'youtube',l:'YouTube',i:'▶️',n:c.yt},{v:'news',l:'News',i:'📰',n:c.news}];
+  return`<div class="filter-bar"><div class="filter-inner"><span class="filter-label">Filter</span>${fs.map(f=>`<button class="f-btn ${S.filter===f.v?'active':''}" data-filter="${f.v}">${f.i} ${f.l} <span class="f-cnt">${f.n}</span></button>`).join('')}</div></div>`;
+}
+
+function rMasonry(entries){return`<div class="masonry">${entries.map(e=>rCard(e)).join('')}</div>`;}
+
+function rCard(e){
+  const pill={photo:'pp',video:'pv',youtube:'py',news:'pn'};
+  const plab={photo:'📷 Photo',video:'🎥 Video',youtube:'▶️ YouTube',news:'📰 News'};
+  let med='';
+  if(e.type==='photo'||e.type==='news'){
+    med=`<div class="card-media" data-li="${encodeURIComponent(e.media_url)}" data-lc="${encodeURIComponent(e.event_name||'')}"><img src="${e.media_url}" alt="${e.event_name||''}" loading="lazy"/><div class="type-pill ${pill[e.type]}">${plab[e.type]}</div></div>`;
+  }else if(e.type==='youtube'){
+    const id=ytId(e.media_url||'');
+    const th=id?`https://img.youtube.com/vi/${id}/hqdefault.jpg`:'';
+    med=`<div class="card-media" data-ly="${encodeURIComponent(e.media_url||'')}">${th?`<img src="${th}" alt="${e.event_name||''}" loading="lazy"/>`:'<div class="vid-ph"></div>'}<div class="play-over"><div class="play-circle"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></div></div><div class="type-pill py">▶️ YouTube</div></div>`;
+  }else if(e.type==='video'){
+    med=`<div class="card-media" data-lv="${encodeURIComponent(e.media_url||'')}"><div class="vid-ph"><div class="play-circle"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></div></div><div class="type-pill pv">🎥 Video</div></div>`;
+  }
+  return`<div class="card">${med}<div class="card-body"><div class="card-event">${e.event_name||''}</div>${e.description?`<div class="card-desc">${e.description}</div>`:''}<div class="card-meta"><div class="meta-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${e.location||''}</div><div class="meta-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${fmtDate(e.event_date)}</div></div><span class="dist-badge ${dc(e.district)}">${e.district||''}</span></div><div class="card-footer"><span class="footer-date">${fmtDate(e.created_at)}</span>${e.type==='news'&&e.newspaper_name?`<span class="footer-paper">📰 ${e.newspaper_name}</span>`:''}</div></div>`;
+}
+
+function rLoading(){return`<div class="loading"><div class="spinner"></div><p style="color:var(--text-secondary);font-size:13px">Loading IDY Wall...</p></div>`;}
+function rEmpty(){return`<div class="empty"><div class="empty-icon">🪷</div><div class="empty-title">Wall is empty</div><div class="empty-sub">${S.filter!=='all'?'No entries for this filter.':'No entries yet — upload the first one!'}</div></div>`;}
+
+function rLoginModal(){
+  return`<div class="overlay" id="loginOverlay"><div class="modal" style="max-width:420px"><button class="modal-close" id="closeLogin">✕</button><div class="login-body"><div class="login-icon">🧘</div><div class="login-title">Nodal Officer Login</div><div class="login-sub">IDY 2026 · Uttarakhand AYUSH</div><div class="fg"><label class="fl">📱 Mobile Number</label><input class="fi" type="tel" id="lMobile" placeholder="10-digit mobile number" value="${S.loginMobile}" maxlength="10" inputmode="numeric"/></div><div class="fg"><label class="fl">🔒 Password</label><input class="fi" type="password" id="lPass" placeholder="••••••••" value="${S.loginPass}"/></div>${S.loginErr?`<div class="err" style="margin-bottom:10px">⚠️ ${S.loginErr}</div>`:''}<button class="btn-p" id="doLogin">Login →</button></div></div></div>`;
+}
+
+function rChangePwdModal(){
+  return`<div class="overlay" id="changePwdOverlay"><div class="modal" style="max-width:420px"><div class="login-body"><div class="login-icon">🔐</div><div class="login-title">Password Set Karein</div><div class="login-sub" style="margin-bottom:20px">Pehli baar login — apna naya password banayein</div><div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:10px;padding:12px 14px;font-size:12px;color:#92400E;margin-bottom:20px;text-align:left">⚠️ Default password use ho raha hai. Security ke liye abhi change karein.</div><div class="fg"><label class="fl">Naya Password *</label><input class="fi" type="password" id="newPass" placeholder="Minimum 6 characters" value="${S.newPass}"/></div><div class="fg"><label class="fl">Password Confirm Karein *</label><input class="fi" type="password" id="newPass2" placeholder="Dobara dalein" value="${S.newPass2}"/></div>${S.changePwdErr?`<div class="err" style="margin-bottom:10px">⚠️ ${S.changePwdErr}</div>`:''}<button class="btn-p" id="doChangePwd">✅ Password Save Karein</button></div></div></div>`;
+}
+
+function rUploadModal(){
+  const e=S.uErrors;const isYT=S.uType==='youtube';const isNews=S.uType==='news';const isVid=S.uType==='video';
+  return`<div class="overlay" id="uploadOverlay"><div class="modal" style="max-width:610px"><button class="modal-close" id="closeUpload">✕</button><div class="upload-header"><div class="upload-title">Upload to IDY Wall</div><div class="upload-sub">Har entry Uttarakhand ki yoga story ka hissa ban jaayegi 🙏</div></div><div class="upload-body"><div class="sec-title">Content Type</div><div class="type-grid">${[{v:'photo',i:'📷',l:'Photo'},{v:'video',i:'🎥',l:'Video'},{v:'youtube',i:'▶️',l:'YouTube'},{v:'news',i:'📰',l:'News'}].map(t=>`<div class="t-opt ${S.uType===t.v?'sel':''}" data-utype="${t.v}"><div class="t-icon">${t.i}</div><div class="t-name">${t.l}</div></div>`).join('')}</div><div class="sec-title">Event Details</div><div class="fg"><label class="fl">Event Name *</label><input class="fi" id="uEvent" type="text" placeholder="e.g. IDY 2026 Main Event, Char Dham Yoga Sangam..." value="${S.uEvent}" maxlength="120"/>${e.ev?`<div class="err">${e.ev}</div>`:''}</div><div class="two-col"><div class="fg"><label class="fl">Location *</label><input class="fi" id="uLoc" type="text" placeholder="Venue / Place" value="${S.uLocation}"/>${e.loc?`<div class="err">${e.loc}</div>`:''}</div><div class="fg"><label class="fl">Date *</label><input class="fi" id="uDate" type="date" value="${S.uDate}"/>${e.date?`<div class="err">${e.date}</div>`:''}</div></div><div class="fg"><label class="fl">District *</label><select class="fsel" id="uDist"><option value="">— Select District —</option>${DISTRICTS.map(d=>`<option value="${d}" ${S.uDistrict===d?'selected':''}>${d}</option>`).join('')}</select>${e.dist?`<div class="err">${e.dist}</div>`:''}</div>${isNews?`<div class="fg"><label class="fl">Newspaper Name *</label><input class="fi" id="uPaper" type="text" placeholder="e.g. Amar Ujala, Dainik Jagran..." value="${S.uNewspaper}"/>${e.paper?`<div class="err">${e.paper}</div>`:''}</div>`:''}<div class="fg"><label class="fl">Description (optional)</label><textarea class="fta" id="uDesc" placeholder="Brief description...">${S.uDesc}</textarea></div><div class="sec-title">Media</div>${isYT?`<div class="fg"><label class="fl">YouTube URL *</label><input class="fi" id="uYT" type="url" placeholder="https://youtube.com/watch?v=..." value="${S.uYoutube}"/>${e.yt?`<div class="err">${e.yt}</div>`:''}</div>`:`<div class="up-area" id="upArea"><input type="file" id="fileIn" accept="${isVid?'video/*':'image/*'}"/><div class="up-icon">${isVid?'🎥':'📸'}</div><div class="up-text"><strong>Click to select</strong> or drag & drop<br><small style="opacity:0.7">${isVid?'MP4, MOV — uploaded as-is':'JPG, PNG, WEBP'}</small></div>${S.uFileName?`<div class="up-preview">✅ ${S.uFileName}</div>`:''}</div>${e.file?`<div class="err" style="margin-top:5px">${e.file}</div>`:''}`}${S.uploading?`<div class="prog-wrap"><div class="prog-label">Uploading to Cloudinary... ${S.pct}%</div><div class="prog-outer"><div class="prog-inner" style="width:${S.pct}%"></div></div></div>`:''}<button class="btn-p" id="doUpload" ${S.uploading?'disabled':''}>${S.uploading?'⏳ Uploading...':'🙏 Submit to IDY Wall'}</button><button class="btn-s" id="cancelUpload">Cancel</button></div></div></div>`;
+}
+
+function rLightbox(){
+  const lb=S.lightbox;let c='';
+  if(lb.type==='img')c=`<img src="${lb.url}" alt="${lb.cap||''}"/><div class="lb-cap">${lb.cap||''}</div>`;
+  else if(lb.type==='yt'){const id=ytId(lb.url);c=`<iframe src="https://www.youtube.com/embed/${id}?autoplay=1" allowfullscreen allow="autoplay"></iframe>`;}
+  else if(lb.type==='vid')c=`<video src="${lb.url}" controls autoplay></video>`;
+  return`<div class="lightbox" id="lbOverlay"><button class="lb-close" id="lbClose">✕</button><div class="lb-inner">${c}</div></div>`;
+}
+
+function attachEvents(){
+  document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>set({filter:b.dataset.filter})));
+  q('loginBtn',el=>el.addEventListener('click',()=>set({showLogin:true,loginErr:''})));
+  q('closeLogin',el=>el.addEventListener('click',()=>set({showLogin:false})));
+  q('loginOverlay',el=>el.addEventListener('click',ev=>{if(ev.target===el)set({showLogin:false});}));
+  q('lMobile',el=>el.addEventListener('input',ev=>{S.loginMobile=ev.target.value.replace(/\D/g,'');}));
+  q('lPass',el=>{el.addEventListener('input',ev=>{S.loginPass=ev.target.value;});el.addEventListener('keydown',ev=>{if(ev.key==='Enter')document.getElementById('doLogin')?.click();});});
+  q('doLogin',el=>el.addEventListener('click',async()=>{el.disabled=true;el.textContent='Logging in...';await doLogin();el.disabled=false;el.textContent='Login →';}));
+  q('doChangePwd',el=>el.addEventListener('click',async()=>{el.disabled=true;el.textContent='Saving...';await doChangePassword();el.disabled=false;el.textContent='✅ Password Save Karein';}));
+  q('newPass',el=>el.addEventListener('input',ev=>set({newPass:ev.target.value})));
+  q('newPass2',el=>el.addEventListener('input',ev=>set({newPass2:ev.target.value})));
+  q('openUpload',el=>el.addEventListener('click',()=>set({showUpload:true,uErrors:{}})));
+  q('closeUpload',el=>el.addEventListener('click',()=>set({showUpload:false})));
+  q('cancelUpload',el=>el.addEventListener('click',()=>set({showUpload:false})));
+  q('uploadOverlay',el=>el.addEventListener('click',ev=>{if(ev.target===el)set({showUpload:false});}));
+  q('logoutBtn',el=>el.addEventListener('click',doLogout));
+  document.querySelectorAll('[data-utype]').forEach(el=>el.addEventListener('click',()=>set({uType:el.dataset.utype,uFile:null,uFileName:'',uErrors:{}})));
+  q('uEvent',el=>el.addEventListener('input',ev=>set({uEvent:ev.target.value})));
+  q('uLoc',el=>el.addEventListener('input',ev=>set({uLocation:ev.target.value})));
+  q('uDate',el=>el.addEventListener('change',ev=>set({uDate:ev.target.value})));
+  q('uDist',el=>el.addEventListener('change',ev=>set({uDistrict:ev.target.value})));
+  q('uDesc',el=>el.addEventListener('input',ev=>set({uDesc:ev.target.value})));
+  q('uPaper',el=>el.addEventListener('input',ev=>set({uNewspaper:ev.target.value})));
+  q('uYT',el=>el.addEventListener('input',ev=>set({uYoutube:ev.target.value})));
+  q('fileIn',el=>el.addEventListener('change',ev=>{const f=ev.target.files[0];if(f)set({uFile:f,uFileName:f.name});}));
+  q('doUpload',el=>el.addEventListener('click',submitEntry));
+  document.querySelectorAll('[data-li]').forEach(el=>el.addEventListener('click',()=>set({lightbox:{type:'img',url:decodeURIComponent(el.dataset.li),cap:decodeURIComponent(el.dataset.lc||'')}})));
+  document.querySelectorAll('[data-ly]').forEach(el=>el.addEventListener('click',()=>set({lightbox:{type:'yt',url:decodeURIComponent(el.dataset.ly)}})));
+  document.querySelectorAll('[data-lv]').forEach(el=>el.addEventListener('click',()=>set({lightbox:{type:'vid',url:decodeURIComponent(el.dataset.lv)}})));
+  q('lbOverlay',el=>el.addEventListener('click',ev=>{if(ev.target===el)set({lightbox:null});}));
+  q('lbClose',el=>el.addEventListener('click',()=>set({lightbox:null})));
+}
+function q(id,fn){const el=document.getElementById(id);if(el)fn(el);}
+
+async function init(){render();await checkSession();await loadEntries();}
+init();
+</script>
+</body>
+</html>
