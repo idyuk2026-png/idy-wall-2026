@@ -545,7 +545,7 @@ async function uploadCloudinary(file,onPct){
       if(xhr.status===200){
         const r=JSON.parse(xhr.responseText);
         const thumb=r.resource_type==='video'
-          ?r.secure_url.replace('/upload/','/upload/w_640,h_360,c_fill,f_jpg/')
+          ?r.secure_url.replace('/upload/','/upload/w_640,h_360,c_fill,so_2,f_jpg/').replace(/\.(mp4|mov|avi|webm)$/i,'.jpg')
           :r.secure_url;
         res({url:r.secure_url,thumb});
       }else rej(new Error('Upload failed'));
@@ -597,13 +597,23 @@ async function submitEntry(){
     const{error}=await sb.from('idy_entries').insert([entry]);
     if(error)throw error;
     mut({pct:100});updateYogaProgress(100);
-    await new Promise(r=>setTimeout(r,400));
-    set({uploading:false,pct:0,showUpload:false,uFile:null,uFileName:'',uEvent:'',uLocation:'',uDistrict:'',uDate:tod(),uDesc:'',uNewspaper:'',uYoutube:'',uType:'photo'});
+    await new Promise(r=>setTimeout(r,900));
+    stopYogaAnimation();
+    const yc=document.getElementById('yogaContainer');
+    if(yc){
+      yc.style.transition='opacity 0.4s ease';
+      yc.style.opacity='0';
+      await new Promise(r=>setTimeout(r,400));
+      yc.remove();
+    }
+    Object.assign(S,{uploading:false,pct:0,showUpload:false,uFile:null,uFileName:'',uEvent:'',uLocation:'',uDistrict:'',uDate:tod(),uDesc:'',uNewspaper:'',uYoutube:'',uType:'photo'});
+    render();
     showToast('✅ Uploaded to IDY Wall!','ok');
     loadEntries();
   }catch(err){
     stopYogaAnimation();
-    const yce=document.getElementById('yogaContainer');if(yce)yce.remove();
+    const yce=document.getElementById('yogaContainer');
+    if(yce){ yce.style.opacity='0'; yce.style.transition='opacity 0.3s'; setTimeout(()=>yce.remove(),300); }
     set({uploading:false,pct:0});
     showToast('Upload failed: '+err.message,'er');
   }
@@ -705,7 +715,14 @@ function rCard(e){
     const th=id?`https://img.youtube.com/vi/${id}/hqdefault.jpg`:'';
     med=`<div class="card-media" data-ly="${encodeURIComponent(e.media_url||'')}">${th?`<img src="${th}" alt="${e.event_name||''}" loading="lazy"/>`:'<div class="vid-ph"></div>'}<div class="play-over"><div class="play-circle"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></div></div><div class="type-pill py">▶️ YouTube</div></div>`;
   }else if(e.type==='video'){
-    med=`<div class="card-media" data-lv="${encodeURIComponent(e.media_url||'')}"><div class="vid-ph"><div class="play-circle"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></div></div><div class="type-pill pv">🎥 Video</div></div>`;
+    const vThumb=e.thumbnail_url||'';
+    med=`<div class="card-media" data-lv="${encodeURIComponent(e.media_url||'')}">
+      ${vThumb
+        ?`<img src="${vThumb}" alt="${e.event_name||''}" loading="lazy" style="width:100%;height:auto;display:block;"/>`
+        :`<div class="vid-ph"></div>`}
+      <div class="play-over"><div class="play-circle"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></div></div>
+      <div class="type-pill pv">🎥 Video</div>
+    </div>`;
   }
   const isSA=S.appUser?.role==='super_admin';
   const pinBtn=isSA?`<button class="pin-btn ${e.is_pinned?'pinned':''}" data-pin-id="${e.id}" data-pin-val="${e.is_pinned?'true':'false'}" title="${e.is_pinned?'Unpin':'Pin to top'}">${e.is_pinned?'📌':'📍'}</button>`:'';
