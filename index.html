@@ -316,7 +316,7 @@ const S={
   entries:[],loading:true,filter:'all',user:null,appUser:null,
   showLogin:false,loginMobile:'',loginPass:'',loginErr:'',
   showChangePwd:false,newPass:'',newPass2:'',changePwdErr:'',
-  showAdmin:false,adminDistrict:'',adminName:'',adminMobile:'',adminGenPwd:'',adminUsers:[],adminLoading:false,adminErr:'',
+  showAdmin:false,adminDistrict:'',adminName:'',adminMobile:'',adminGenPwd:'',adminUsers:[],adminLoading:false,adminErr:'',adminLastMobile:'',
   showUpload:false,uType:'photo',uFile:null,uFileName:'',
   uEvent:'',uLocation:'',uDistrict:'',uDate:tod(),
   uDesc:'',uNewspaper:'',uYoutube:'',
@@ -463,7 +463,7 @@ async function createDistrictUser(){
     password:pwd
   }]);
   if(dbe)return set({adminErr:'DB error: '+dbe.message});
-  set({adminGenPwd:pwd,adminMobile:'',adminName:'',adminErr:''});
+  set({adminGenPwd:pwd,adminLastMobile:mobile,adminMobile:'',adminName:'',adminErr:''});
   showToast('✅ User created!','ok');
   loadAdminUsers();
 }
@@ -695,10 +695,19 @@ function rAdminModal(){
       ${S.adminErr?`<div class="err" style="margin-bottom:10px">⚠️ ${S.adminErr}</div>`:''}
       ${S.adminGenPwd?`
         <div style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:12px;padding:16px;margin-bottom:16px">
-          <div style="font-size:11px;font-weight:700;color:#166534;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">✅ User Created! Share this password:</div>
-          <div style="font-size:22px;font-weight:800;color:#166534;letter-spacing:3px;font-family:'Courier New',monospace">${S.adminGenPwd}</div>
-          <div style="font-size:11px;color:#166534;margin-top:6px;opacity:0.8">Share this password via WhatsApp — user must change it on first login</div>
-          <button onclick="navigator.clipboard.writeText('${S.adminGenPwd}');this.textContent='✅ Copied!'" style="margin-top:10px;padding:6px 14px;background:#166534;color:white;border:none;border-radius:8px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">📋 Copy Password</button>
+          <div style="font-size:11px;font-weight:700;color:#166534;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">✅ User Created! Share these credentials:</div>
+          <div style="background:white;border:1px solid #BBF7D0;border-radius:8px;padding:12px;margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <span style="font-size:11px;color:#166534;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">📱 Mobile (Username)</span>
+            </div>
+            <div style="font-size:20px;font-weight:800;color:#166534;letter-spacing:2px;font-family:'Courier New',monospace">${S.adminLastMobile}</div>
+          </div>
+          <div style="background:white;border:1px solid #BBF7D0;border-radius:8px;padding:12px;margin-bottom:12px">
+            <div style="font-size:11px;color:#166534;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">🔒 Password</div>
+            <div style="font-size:20px;font-weight:800;color:#166534;letter-spacing:3px;font-family:'Courier New',monospace">${S.adminGenPwd}</div>
+          </div>
+          <div style="font-size:11px;color:#166534;margin-bottom:10px;opacity:0.8">⚠️ Share via WhatsApp — user must change password on first login</div>
+          <button onclick="navigator.clipboard.writeText('Login Details:\nMobile: ${S.adminLastMobile}\nPassword: ${S.adminGenPwd}\nApp: https://idy2026.vercel.app');this.textContent='✅ Copied!';setTimeout(()=>this.textContent='📋 Copy Both',2000)" style="width:100%;padding:10px;background:#166534;color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">📋 Copy Both (Mobile + Password)</button>
         </div>`:''}
       <button class="btn-p" id="doCreateUser" style="margin-bottom:0">➕ Create User</button>
 
@@ -707,7 +716,7 @@ function rAdminModal(){
         S.adminUsers.length===0?'<div style="text-align:center;padding:20px;color:var(--text-secondary);font-size:13px">No district users created yet</div>':
         `<div style="border:1px solid rgba(0,0,0,0.07);border-radius:12px;overflow:hidden">
           <table style="width:100%;border-collapse:collapse;font-size:13px">
-            <thead><tr style="background:#F9FAFB"><th style="padding:10px 14px;text-align:left;font-weight:600;color:var(--text-secondary);font-size:11px;letter-spacing:0.5px">NAAM</th><th style="padding:10px 14px;text-align:left;font-weight:600;color:var(--text-secondary);font-size:11px;letter-spacing:0.5px">MOBILE</th><th style="padding:10px 14px;text-align:left;font-weight:600;color:var(--text-secondary);font-size:11px;letter-spacing:0.5px">DISTRICT</th><th style="padding:10px 14px;text-align:left;font-weight:600;color:var(--text-secondary);font-size:11px;letter-spacing:0.5px"></th></tr></thead>
+            <thead><tr style="background:#F9FAFB"><th style="padding:10px 14px;text-align:left;font-weight:600;color:var(--text-secondary);font-size:11px;letter-spacing:0.5px">NAME</th><th style="padding:10px 14px;text-align:left;font-weight:600;color:var(--text-secondary);font-size:11px;letter-spacing:0.5px">MOBILE</th><th style="padding:10px 14px;text-align:left;font-weight:600;color:var(--text-secondary);font-size:11px;letter-spacing:0.5px">DISTRICT</th><th style="padding:10px 14px;text-align:left;font-weight:600;color:var(--text-secondary);font-size:11px;letter-spacing:0.5px"></th></tr></thead>
             <tbody>${S.adminUsers.map((u,i)=>`<tr style="border-top:1px solid rgba(0,0,0,0.05);${i%2===1?'background:#FAFAFA':''}"><td style="padding:10px 14px;font-weight:500">${u.name||'-'}</td><td style="padding:10px 14px;font-family:monospace">${u.mobile}</td><td style="padding:10px 14px"><span class="dist-badge ${dc(u.district)}">${u.district||'-'}</span></td><td style="padding:10px 14px"><button onclick="deleteAdminUser('${u.mobile}')" style="background:none;border:1px solid #FCA5A5;color:#DC2626;padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif">Delete</button></td></tr>`).join('')}</tbody>
           </table>
         </div>`}
