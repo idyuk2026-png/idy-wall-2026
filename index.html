@@ -328,9 +328,9 @@ function tod(){return new Date().toISOString().split('T')[0];}
 // YOGA UPLOAD ANIMATION
 const YOGA_POSES = ['🧘', '🧘‍♀️', '🏃‍♂️', '🤸', '🤸‍♀️', '🧎', '🧎‍♀️', '🙏', '⛹️', '🤾'];
 const YOGA_MESSAGES = [
-  'अपलोड हो रहा है...', 'देवभूमि की यादें सहेजी जा रही हैं...',
-  'योग की शक्ति अपलोड हो रही है...', 'IDY Wall पर जुड़ रहा है...',
-  'Cloudinary पर भेजा जा रहा है...', 'थोड़ा इंतज़ार करें...'
+  'Uploading...', 'Saving memories of Devbhoomi...',
+  'Uploading the power of Yoga...', 'Connecting to IDY Wall...',
+  'Sending to Cloudinary...', 'Please wait...'
 ];
 let yogaPoseIdx = 0;
 let yogaMsgIdx = 0;
@@ -368,7 +368,7 @@ function rYogaOverlay(){
       <span class="yoga-figure" id="yogaFigure" style="transition:opacity 0.2s ease">🧘</span>
     </div>
     <div class="yoga-title">Uploading to IDY Wall</div>
-    <div class="yoga-subtitle" id="yogaMsg">देवभूमि की यादें सहेजी जा रही हैं...</div>
+    <div class="yoga-subtitle" id="yogaMsg">Saving memories of Devbhoomi...</div>
     <div class="yoga-progress-wrap">
       <div class="yoga-pct" id="yogaPct">0%</div>
       <div class="yoga-progress-outer">
@@ -393,37 +393,43 @@ async function loadEntries(){
   set({loading:false,entries:data||[]});
 }
 async function checkSession(){
-  const{data}=await sb.auth.getSession();
-  if(data?.session?.user){
-    const u=data.session.user;
-    const mobile=u.email.replace('@uk.gov.in','');
-    const{data:au}=await sb.from('app_users').select('*').eq('mobile',mobile).single();
-    set({user:u,appUser:au||null});
+  // Check localStorage for saved session
+  const saved = localStorage.getItem('idy_user');
+  if(saved){
+    try{
+      const au = JSON.parse(saved);
+      set({user:au, appUser:au});
+    }catch(e){ localStorage.removeItem('idy_user'); }
   }
-}
-async function loadAppUser(u){
-  const mobile=u.email.replace('@uk.gov.in','');
-  const{data:au}=await sb.from('app_users').select('*').eq('mobile',mobile).single();
-  set({appUser:au||null});
 }
 async function doLogin(){
   const mobile=S.loginMobile.trim();
-  if(!/^\d{10}$/.test(mobile))return set({loginErr:"Valid 10-digit mobile number enter karein"});
-  const email=mobile+"@uk.gov.in";
-  const{data,error}=await sb.auth.signInWithPassword({email,password:S.loginPass});
-  if(error){const msg=error.message.toLowerCase();if(msg.includes("invalid")||msg.includes("credentials"))return set({loginErr:"Mobile number ya password galat hai"});return set({loginErr:error.message});}
-  const u=data.user;
-  await loadAppUser(u);
-  if(S.loginPass==="IDY@2026"){set({showLogin:false,loginErr:"",showChangePwd:true});}
-  else{set({showLogin:false,loginErr:""});showToast("Welcome! Ab upload kar sakte hain.","ok");}
+  if(!/^\d{10}$/.test(mobile))return set({loginErr:"Please enter a valid 10-digit mobile number"});
+  if(!S.loginPass.trim())return set({loginErr:"Please enter your password"});
+  // Check app_users table directly
+  const{data:au,error}=await sb.from('app_users').select('*').eq('mobile',mobile).single();
+  if(error||!au)return set({loginErr:"Mobile number not registered"});
+  if(au.password !== S.loginPass.trim())return set({loginErr:"Incorrect password"});
+  // Save session to localStorage
+  localStorage.setItem('idy_user', JSON.stringify(au));
+  if(S.loginPass==="IDY@2026"){
+    set({user:au,appUser:au,showLogin:false,loginErr:"",showChangePwd:true});
+  }else{
+    set({user:au,appUser:au,showLogin:false,loginErr:""});
+    showToast("Welcome "+au.name+"! Ab upload kar sakte hain.","ok");
+  }
 }
 async function doChangePassword(){
-  if(S.newPass.length<6)return set({changePwdErr:"Password kam se kam 6 characters ka hona chahiye"});
-  if(S.newPass!==S.newPass2)return set({changePwdErr:"Dono passwords match nahi kar rahe"});
-  const{error}=await sb.auth.updateUser({password:S.newPass});
-  if(error)return set({changePwdErr:error.message});
-  set({showChangePwd:false,newPass:"",newPass2:"",changePwdErr:""});
-  showToast("Password change ho gaya! Ab upload kar sakte hain.","ok");
+  if(S.newPass.length<6)return set({changePwdErr:"Password must be at least 6 characters"});
+  if(S.newPass!==S.newPass2)return set({changePwdErr:"Passwords do not match"});
+  // Update password in app_users table
+  const{error}=await sb.from('app_users').update({password:S.newPass}).eq('mobile',S.appUser.mobile);
+  if(error)return set({changePwdErr:"Password update failed: "+error.message});
+  // Update localStorage
+  const updated={...S.appUser,password:S.newPass};
+  localStorage.setItem('idy_user',JSON.stringify(updated));
+  set({showChangePwd:false,newPass:"",newPass2:"",changePwdErr:"",appUser:updated,user:updated});
+  showToast("✅ Password changed successfully! You can now upload.","ok");
 }
 function genPassword(){
   const chars='ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789@#';
@@ -444,18 +450,21 @@ async function createDistrictUser(){
   if(!/^\d{10}$/.test(S.adminMobile.trim()))errs.push('Valid 10-digit mobile number');
   if(errs.length)return set({adminErr:errs.join(' | ')});
   const mobile=S.adminMobile.trim();
-  const email=mobile+'@uk.gov.in';
   const pwd=genPassword();
-  // Create Supabase auth user
-  const{data,error}=await sb.auth.admin?{data:null,error:{message:'Use service role'}}:{data:null,error:null};
-  // Use signUp instead (anon key supports this with email confirm off)
-  const{data:sd,error:se}=await sb.auth.signUp({email,password:pwd,options:{data:{name:S.adminName}}});
-  if(se&&!se.message.includes('already registered'))return set({adminErr:'Auth error: '+se.message});
-  // Save to app_users
-  const{error:dbe}=await sb.from('app_users').upsert([{mobile,name:S.adminName.trim(),district:S.adminDistrict,role:'district_admin'}],{onConflict:'mobile'});
+  // Check if mobile already exists
+  const{data:existing}=await sb.from('app_users').select('mobile').eq('mobile',mobile).single();
+  if(existing)return set({adminErr:'This mobile number is already registered'});
+  // Insert into app_users with generated password
+  const{error:dbe}=await sb.from('app_users').insert([{
+    mobile,
+    name:S.adminName.trim(),
+    district:S.adminDistrict,
+    role:'district_admin',
+    password:pwd
+  }]);
   if(dbe)return set({adminErr:'DB error: '+dbe.message});
   set({adminGenPwd:pwd,adminMobile:'',adminName:'',adminErr:''});
-  showToast('User created!','ok');
+  showToast('✅ User created!','ok');
   loadAdminUsers();
 }
 
@@ -467,7 +476,9 @@ async function deleteAdminUser(mobile){
 }
 
 async function doLogout(){
-  await sb.auth.signOut();set({user:null});showToast('Logged out','ok');
+  localStorage.removeItem('idy_user');
+  set({user:null,appUser:null});
+  showToast('Logged out','ok');
 }
 
 async function uploadCloudinary(file,onPct){
@@ -526,7 +537,7 @@ async function submitEntry(){
       district:S.uDistrict,event_date:S.uDate,description:S.uDesc.trim()||null,
       newspaper_name:S.uType==='news'?S.uNewspaper.trim():null,
       media_url:mediaUrl,thumbnail_url:thumbUrl,
-      uploaded_by:S.user.email,created_at:new Date().toISOString()
+      uploaded_by:S.appUser?.name||S.appUser?.mobile,created_at:new Date().toISOString()
     };
     const{error}=await sb.from('idy_entries').insert([entry]);
     if(error)throw error;
@@ -608,7 +619,7 @@ function rHeader(c){
     <div class="header-body">
       <div class="eyebrow"><div class="pulse"></div><span>International Day of Yoga · 21 June 2026</span></div>
       <h1 class="h-title"><span class="cs">Uttarakhand</span><br>IDY <span class="cg">Wall</span></h1>
-      <p class="h-deva">देवभूमि से योग की आवाज़ — उत्तराखंड योग महोत्सव २०२६</p>
+      <p class="h-deva">Devbhoomi ki awaaz — Uttarakhand Yoga Mahotsav 2026</p>
       <div class="h-rule"></div>
       <div class="stats-row">
         <div class="stat-cell"><div class="stat-n">${c.all}</div><div class="stat-l">Entries</div></div>
@@ -652,7 +663,7 @@ function rLoginModal(){
 }
 
 function rChangePwdModal(){
-  return`<div class="overlay" id="changePwdOverlay"><div class="modal" style="max-width:420px"><div class="login-body"><div class="login-icon">🔐</div><div class="login-title">Password Set Karein</div><div class="login-sub" style="margin-bottom:20px">Pehli baar login — apna naya password banayein</div><div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:10px;padding:12px 14px;font-size:12px;color:#92400E;margin-bottom:20px;text-align:left">⚠️ Default password use ho raha hai. Security ke liye abhi change karein.</div><div class="fg"><label class="fl">Naya Password *</label><input class="fi" type="password" id="newPass" placeholder="Minimum 6 characters" value="${S.newPass}"/></div><div class="fg"><label class="fl">Password Confirm Karein *</label><input class="fi" type="password" id="newPass2" placeholder="Dobara dalein" value="${S.newPass2}"/></div>${S.changePwdErr?`<div class="err" style="margin-bottom:10px">⚠️ ${S.changePwdErr}</div>`:''}<button class="btn-p" id="doChangePwd">✅ Password Save Karein</button></div></div></div>`;
+  return`<div class="overlay" id="changePwdOverlay"><div class="modal" style="max-width:420px"><div class="login-body"><div class="login-icon">🔐</div><div class="login-title">Set Your Password</div><div class="login-sub" style="margin-bottom:20px">First login — please set your new password</div><div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:10px;padding:12px 14px;font-size:12px;color:#92400E;margin-bottom:20px;text-align:left">⚠️ Default password detected. Please change it now for security.</div><div class="fg"><label class="fl">Naya Password *</label><input class="fi" type="password" id="newPass" placeholder="Minimum 6 characters" value="${S.newPass}"/></div><div class="fg"><label class="fl">Password Confirm Karein *</label><input class="fi" type="password" id="newPass2" placeholder="Dobara dalein" value="${S.newPass2}"/></div>${S.changePwdErr?`<div class="err" style="margin-bottom:10px">⚠️ ${S.changePwdErr}</div>`:''}<button class="btn-p" id="doChangePwd">✅ Save Password</button></div></div></div>`;
 }
 
 function rAdminModal(){
@@ -660,10 +671,10 @@ function rAdminModal(){
     <button class="modal-close" id="closeAdmin">✕</button>
     <div class="upload-header">
       <div class="upload-title">⚙️ Manage District Users</div>
-      <div class="upload-sub">Nodal officers ke accounts banao aur manage karo</div>
+      <div class="upload-sub">Create and manage nodal officer accounts</div>
     </div>
     <div class="upload-body">
-      <div class="sec-title">Naya User Banao</div>
+      <div class="sec-title">Create New User</div>
       <div class="two-col">
         <div class="fg">
           <label class="fl">📱 Mobile Number *</label>
@@ -671,7 +682,7 @@ function rAdminModal(){
         </div>
         <div class="fg">
           <label class="fl">👤 Naam *</label>
-          <input class="fi" type="text" id="aName" placeholder="Nodal officer ka naam" value="${S.adminName}"/>
+          <input class="fi" type="text" id="aName" placeholder="Nodal officer name" value="${S.adminName}"/>
         </div>
       </div>
       <div class="fg">
@@ -684,16 +695,16 @@ function rAdminModal(){
       ${S.adminErr?`<div class="err" style="margin-bottom:10px">⚠️ ${S.adminErr}</div>`:''}
       ${S.adminGenPwd?`
         <div style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:12px;padding:16px;margin-bottom:16px">
-          <div style="font-size:11px;font-weight:700;color:#166534;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">✅ User Created! Password Share Karein:</div>
+          <div style="font-size:11px;font-weight:700;color:#166534;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">✅ User Created! Share this password:</div>
           <div style="font-size:22px;font-weight:800;color:#166534;letter-spacing:3px;font-family:'Courier New',monospace">${S.adminGenPwd}</div>
-          <div style="font-size:11px;color:#166534;margin-top:6px;opacity:0.8">Yeh password WhatsApp pe bhej dein — pehli login pe change hoga</div>
+          <div style="font-size:11px;color:#166534;margin-top:6px;opacity:0.8">Share this password via WhatsApp — user must change it on first login</div>
           <button onclick="navigator.clipboard.writeText('${S.adminGenPwd}');this.textContent='✅ Copied!'" style="margin-top:10px;padding:6px 14px;background:#166534;color:white;border:none;border-radius:8px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">📋 Copy Password</button>
         </div>`:''}
-      <button class="btn-p" id="doCreateUser" style="margin-bottom:0">➕ User Banao</button>
+      <button class="btn-p" id="doCreateUser" style="margin-bottom:0">➕ Create User</button>
 
       <div class="sec-title" style="margin-top:24px">Existing Users</div>
       ${S.adminLoading?'<div style="text-align:center;padding:20px;color:var(--text-secondary)">Loading...</div>':
-        S.adminUsers.length===0?'<div style="text-align:center;padding:20px;color:var(--text-secondary);font-size:13px">Abhi koi district user nahi hai</div>':
+        S.adminUsers.length===0?'<div style="text-align:center;padding:20px;color:var(--text-secondary);font-size:13px">No district users created yet</div>':
         `<div style="border:1px solid rgba(0,0,0,0.07);border-radius:12px;overflow:hidden">
           <table style="width:100%;border-collapse:collapse;font-size:13px">
             <thead><tr style="background:#F9FAFB"><th style="padding:10px 14px;text-align:left;font-weight:600;color:var(--text-secondary);font-size:11px;letter-spacing:0.5px">NAAM</th><th style="padding:10px 14px;text-align:left;font-weight:600;color:var(--text-secondary);font-size:11px;letter-spacing:0.5px">MOBILE</th><th style="padding:10px 14px;text-align:left;font-weight:600;color:var(--text-secondary);font-size:11px;letter-spacing:0.5px">DISTRICT</th><th style="padding:10px 14px;text-align:left;font-weight:600;color:var(--text-secondary);font-size:11px;letter-spacing:0.5px"></th></tr></thead>
@@ -706,7 +717,7 @@ function rAdminModal(){
 
 function rUploadModal(){
   const e=S.uErrors;const isYT=S.uType==='youtube';const isNews=S.uType==='news';const isVid=S.uType==='video';
-  return`<div class="overlay" id="uploadOverlay"><div class="modal" style="max-width:610px"><button class="modal-close" id="closeUpload">✕</button><div class="upload-header"><div class="upload-title">Upload to IDY Wall</div><div class="upload-sub">Har entry Uttarakhand ki yoga story ka hissa ban jaayegi 🙏</div></div><div class="upload-body"><div class="sec-title">Content Type</div><div class="type-grid">${[{v:'photo',i:'📷',l:'Photo'},{v:'video',i:'🎥',l:'Video'},{v:'youtube',i:'▶️',l:'YouTube'},{v:'news',i:'📰',l:'News'}].map(t=>`<div class="t-opt ${S.uType===t.v?'sel':''}" data-utype="${t.v}"><div class="t-icon">${t.i}</div><div class="t-name">${t.l}</div></div>`).join('')}</div><div class="sec-title">Event Details</div><div class="fg"><label class="fl">Event Name *</label><input class="fi" id="uEvent" type="text" placeholder="e.g. IDY 2026 Main Event, Char Dham Yoga Sangam..." value="${S.uEvent}" maxlength="120"/>${e.ev?`<div class="err">${e.ev}</div>`:''}</div><div class="two-col"><div class="fg"><label class="fl">Location *</label><input class="fi" id="uLoc" type="text" placeholder="Venue / Place" value="${S.uLocation}"/>${e.loc?`<div class="err">${e.loc}</div>`:''}</div><div class="fg"><label class="fl">Date *</label><input class="fi" id="uDate" type="date" value="${S.uDate}"/>${e.date?`<div class="err">${e.date}</div>`:''}</div></div><div class="fg"><label class="fl">District *</label><select class="fsel" id="uDist"><option value="">— Select District —</option>${DISTRICTS.map(d=>`<option value="${d}" ${S.uDistrict===d?'selected':''}>${d}</option>`).join('')}</select>${e.dist?`<div class="err">${e.dist}</div>`:''}</div>${isNews?`<div class="fg"><label class="fl">Newspaper Name *</label><input class="fi" id="uPaper" type="text" placeholder="e.g. Amar Ujala, Dainik Jagran..." value="${S.uNewspaper}"/>${e.paper?`<div class="err">${e.paper}</div>`:''}</div>`:''}<div class="fg"><label class="fl">Description (optional)</label><textarea class="fta" id="uDesc" placeholder="Brief description...">${S.uDesc}</textarea></div><div class="sec-title">Media</div>${isYT?`<div class="fg"><label class="fl">YouTube URL *</label><input class="fi" id="uYT" type="url" placeholder="https://youtube.com/watch?v=..." value="${S.uYoutube}"/>${e.yt?`<div class="err">${e.yt}</div>`:''}</div>`:`<div class="up-area" id="upArea"><input type="file" id="fileIn" accept="${isVid?'video/*':'image/*'}"/><div class="up-icon">${isVid?'🎥':'📸'}</div><div class="up-text"><strong>Click to select</strong> or drag & drop<br><small style="opacity:0.7">${isVid?'MP4, MOV — uploaded as-is':'JPG, PNG, WEBP'}</small></div>${S.uFileName?`<div class="up-preview">✅ ${S.uFileName}</div>`:''}</div>${e.file?`<div class="err" style="margin-top:5px">${e.file}</div>`:''}`}${S.uploading?`<div class="prog-wrap"><div class="prog-label">Uploading to Cloudinary... ${S.pct}%</div><div class="prog-outer"><div class="prog-inner" style="width:${S.pct}%"></div></div></div>`:''}<button class="btn-p" id="doUpload" ${S.uploading?'disabled':''}>${S.uploading?'⏳ Uploading...':'🙏 Submit to IDY Wall'}</button><button class="btn-s" id="cancelUpload">Cancel</button></div></div></div>`;
+  return`<div class="overlay" id="uploadOverlay"><div class="modal" style="max-width:610px"><button class="modal-close" id="closeUpload">✕</button><div class="upload-header"><div class="upload-title">Upload to IDY Wall</div><div class="upload-sub">Every entry becomes part of Uttarakhand's yoga story 🙏</div></div><div class="upload-body"><div class="sec-title">Content Type</div><div class="type-grid">${[{v:'photo',i:'📷',l:'Photo'},{v:'video',i:'🎥',l:'Video'},{v:'youtube',i:'▶️',l:'YouTube'},{v:'news',i:'📰',l:'News'}].map(t=>`<div class="t-opt ${S.uType===t.v?'sel':''}" data-utype="${t.v}"><div class="t-icon">${t.i}</div><div class="t-name">${t.l}</div></div>`).join('')}</div><div class="sec-title">Event Details</div><div class="fg"><label class="fl">Event Name *</label><input class="fi" id="uEvent" type="text" placeholder="e.g. IDY 2026 Main Event, Char Dham Yoga Sangam..." value="${S.uEvent}" maxlength="120"/>${e.ev?`<div class="err">${e.ev}</div>`:''}</div><div class="two-col"><div class="fg"><label class="fl">Location *</label><input class="fi" id="uLoc" type="text" placeholder="Venue / Place" value="${S.uLocation}"/>${e.loc?`<div class="err">${e.loc}</div>`:''}</div><div class="fg"><label class="fl">Date *</label><input class="fi" id="uDate" type="date" value="${S.uDate}"/>${e.date?`<div class="err">${e.date}</div>`:''}</div></div><div class="fg"><label class="fl">District *</label><select class="fsel" id="uDist"><option value="">— Select District —</option>${DISTRICTS.map(d=>`<option value="${d}" ${S.uDistrict===d?'selected':''}>${d}</option>`).join('')}</select>${e.dist?`<div class="err">${e.dist}</div>`:''}</div>${isNews?`<div class="fg"><label class="fl">Newspaper Name *</label><input class="fi" id="uPaper" type="text" placeholder="e.g. Amar Ujala, Dainik Jagran..." value="${S.uNewspaper}"/>${e.paper?`<div class="err">${e.paper}</div>`:''}</div>`:''}<div class="fg"><label class="fl">Description (optional)</label><textarea class="fta" id="uDesc" placeholder="Brief description...">${S.uDesc}</textarea></div><div class="sec-title">Media</div>${isYT?`<div class="fg"><label class="fl">YouTube URL *</label><input class="fi" id="uYT" type="url" placeholder="https://youtube.com/watch?v=..." value="${S.uYoutube}"/>${e.yt?`<div class="err">${e.yt}</div>`:''}</div>`:`<div class="up-area" id="upArea"><input type="file" id="fileIn" accept="${isVid?'video/*':'image/*'}"/><div class="up-icon">${isVid?'🎥':'📸'}</div><div class="up-text"><strong>Click to select</strong> or drag & drop<br><small style="opacity:0.7">${isVid?'MP4, MOV — uploaded as-is':'JPG, PNG, WEBP'}</small></div>${S.uFileName?`<div class="up-preview">✅ ${S.uFileName}</div>`:''}</div>${e.file?`<div class="err" style="margin-top:5px">${e.file}</div>`:''}`}${S.uploading?`<div class="prog-wrap"><div class="prog-label">Uploading to Cloudinary... ${S.pct}%</div><div class="prog-outer"><div class="prog-inner" style="width:${S.pct}%"></div></div></div>`:''}<button class="btn-p" id="doUpload" ${S.uploading?'disabled':''}>${S.uploading?'⏳ Uploading...':'🙏 Submit to IDY Wall'}</button><button class="btn-s" id="cancelUpload">Cancel</button></div></div></div>`;
 }
 
 function rLightbox(){
@@ -728,11 +739,11 @@ function attachEvents(){
   q('aMobile',el=>el.addEventListener('input',ev=>mut({adminMobile:ev.target.value.replace(/\D/g,'')})));
   q('aName',el=>el.addEventListener('input',ev=>mut({adminName:ev.target.value})));
   q('aDist',el=>el.addEventListener('change',ev=>mut({adminDistrict:ev.target.value})));
-  q('doCreateUser',el=>el.addEventListener('click',async()=>{el.disabled=true;el.textContent='Creating...';await createDistrictUser();el.disabled=false;el.textContent='➕ User Banao';}));
+  q('doCreateUser',el=>el.addEventListener('click',async()=>{el.disabled=true;el.textContent='Creating...';await createDistrictUser();el.disabled=false;el.textContent='➕ Create User';}));
   q('lMobile',el=>el.addEventListener('input',ev=>{S.loginMobile=ev.target.value.replace(/\D/g,'');/* no re-render */}));
   q('lPass',el=>{el.addEventListener('input',ev=>{S.loginPass=ev.target.value;});el.addEventListener('keydown',ev=>{if(ev.key==='Enter')document.getElementById('doLogin')?.click();});});
   q('doLogin',el=>el.addEventListener('click',async()=>{el.disabled=true;el.textContent='Logging in...';await doLogin();el.disabled=false;el.textContent='Login →';}));
-  q('doChangePwd',el=>el.addEventListener('click',async()=>{el.disabled=true;el.textContent='Saving...';await doChangePassword();el.disabled=false;el.textContent='✅ Password Save Karein';}));
+  q('doChangePwd',el=>el.addEventListener('click',async()=>{el.disabled=true;el.textContent='Saving...';await doChangePassword();el.disabled=false;el.textContent='✅ Save Password';}));
   q('newPass',el=>el.addEventListener('input',ev=>mut({newPass:ev.target.value})));
   q('newPass2',el=>el.addEventListener('input',ev=>mut({newPass2:ev.target.value})));
   q('openUpload',el=>el.addEventListener('click',()=>set({showUpload:true,uErrors:{}})));
