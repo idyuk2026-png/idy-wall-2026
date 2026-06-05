@@ -396,20 +396,20 @@ async function checkSession(){
   const{data}=await sb.auth.getSession();
   if(data?.session?.user){
     const u=data.session.user;
-    const mobile=u.email.replace('@idy2026.com','');
+    const mobile=u.email.replace('@uk.gov.in','');
     const{data:au}=await sb.from('app_users').select('*').eq('mobile',mobile).single();
     set({user:u,appUser:au||null});
   }
 }
 async function loadAppUser(u){
-  const mobile=u.email.replace('@idy2026.com','');
+  const mobile=u.email.replace('@uk.gov.in','');
   const{data:au}=await sb.from('app_users').select('*').eq('mobile',mobile).single();
   set({appUser:au||null});
 }
 async function doLogin(){
   const mobile=S.loginMobile.trim();
   if(!/^\d{10}$/.test(mobile))return set({loginErr:"Valid 10-digit mobile number enter karein"});
-  const email=mobile+"@idy2026.com";
+  const email=mobile+"@uk.gov.in";
   const{data,error}=await sb.auth.signInWithPassword({email,password:S.loginPass});
   if(error){const msg=error.message.toLowerCase();if(msg.includes("invalid")||msg.includes("credentials"))return set({loginErr:"Mobile number ya password galat hai"});return set({loginErr:error.message});}
   const u=data.user;
@@ -444,7 +444,7 @@ async function createDistrictUser(){
   if(!/^\d{10}$/.test(S.adminMobile.trim()))errs.push('Valid 10-digit mobile number');
   if(errs.length)return set({adminErr:errs.join(' | ')});
   const mobile=S.adminMobile.trim();
-  const email=mobile+'@idy2026.com';
+  const email=mobile+'@uk.gov.in';
   const pwd=genPassword();
   // Create Supabase auth user
   const{data,error}=await sb.auth.admin?{data:null,error:{message:'Use service role'}}:{data:null,error:null};
