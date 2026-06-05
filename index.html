@@ -65,10 +65,27 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
 .f-btn.active .f-cnt{background:rgba(255,255,255,0.25);color:#fff;}
 
 /* MAIN */
-.main{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:26px 14px 80px;}
-.masonry{columns:4 260px;column-gap:14px;}
-@media(max-width:900px){.masonry{columns:2 220px;}}
-@media(max-width:480px){.masonry{columns:1;}}
+.main{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:16px 8px 80px;}
+@media(min-width:600px){.main{padding:24px 14px 80px;}}
+.masonry{columns:2 160px;column-gap:10px;}
+@media(min-width:600px){.masonry{columns:3 180px;column-gap:12px;}}
+@media(min-width:1024px){.masonry{columns:4 240px;column-gap:14px;}}
+
+/* Compact cards on mobile */
+@media(max-width:599px){
+  .card{border-radius:12px;margin-bottom:10px;}
+  .card-body{padding:10px 12px 4px;}
+  .card-event{font-size:12.5px;margin-bottom:4px;}
+  .card-desc{font-size:11px;-webkit-line-clamp:2;}
+  .card-meta{gap:3px;margin-bottom:7px;}
+  .meta-row{font-size:10.5px;}
+  .dist-badge{font-size:9.5px;padding:2px 8px;}
+  .card-footer{padding:7px 12px 10px;}
+  .footer-date{font-size:10px;}
+  .play-circle{width:40px;height:40px;}
+  .play-circle svg{width:16px;height:16px;}
+  .type-pill{font-size:9.5px;padding:3px 8px;}
+}
 
 /* CARD */
 .card{break-inside:avoid;display:block;background:#fff;border-radius:16px;overflow:hidden;margin-bottom:14px;border:1px solid rgba(0,0,0,0.05);box-shadow:0 2px 8px rgba(0,0,0,0.06);transition:transform 0.3s ease,box-shadow 0.3s ease;animation:cardIn 0.4s ease both;}
@@ -299,6 +316,47 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
   0%,100%{background:rgba(255,255,255,0.2);transform:scale(1);}
   50%{background:var(--saffron);transform:scale(1.4);}
 }
+
+@media(max-width:599px){
+  .header-body{padding:6px 16px 28px;}
+  .h-title{font-size:32px;}
+  .stats-row{gap:0;}
+  .stat-cell{padding:0 14px;}
+  .stat-n{font-size:22px;}
+  .stat-l{font-size:9px;}
+  .eyebrow{margin-bottom:14px;}
+  .h-rule{margin:14px auto;}
+  .header-top{padding:14px 16px;}
+  .filter-bar{padding:10px 12px;}
+  .f-btn{padding:6px 11px;font-size:11.5px;}
+}
+
+/* PIN FEATURE */
+.card-pinned{
+  border:2px solid rgba(232,97,10,0.3)!important;
+  box-shadow:0 4px 20px rgba(232,97,10,0.12)!important;
+}
+.pinned-badge{
+  position:absolute;
+  top:0;left:0;right:0;
+  background:linear-gradient(90deg,rgba(232,97,10,0.9),rgba(200,80,0,0.9));
+  color:white;
+  font-size:10px;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;
+  padding:4px 10px;
+  text-align:center;
+  z-index:3;
+}
+.card-pinned .card-media{position:relative;}
+.pin-btn{
+  background:none;border:1.5px solid rgba(0,0,0,0.08);
+  border-radius:8px;padding:4px 7px;
+  font-size:14px;cursor:pointer;
+  transition:all 0.2s;flex-shrink:0;
+  line-height:1;
+}
+.pin-btn:hover{background:rgba(232,97,10,0.08);border-color:var(--saffron);}
+.pin-btn.pinned{background:rgba(232,97,10,0.1);border-color:var(--saffron);}
 </style>
 </head>
 <body>
@@ -389,8 +447,14 @@ function mut(p){Object.assign(S,p);}  // update state only, no render
 
 async function loadEntries(){
   set({loading:true});
-  const{data}=await sb.from('idy_entries').select('*').order('created_at',{ascending:false});
+  const{data}=await sb.from('idy_entries').select('*').order('is_pinned',{ascending:false}).order('created_at',{ascending:false});
   set({loading:false,entries:data||[]});
+}
+
+async function togglePin(id, currentVal){
+  await sb.from('idy_entries').update({is_pinned:!currentVal}).eq('id',id);
+  showToast(!currentVal?'📌 Pinned to top!':'📌 Unpinned','ok');
+  loadEntries();
 }
 async function checkSession(){
   // Check localStorage for saved session
@@ -514,8 +578,10 @@ async function submitEntry(){
   if(S.uType==='youtube'&&!S.uYoutube.trim())e.yt='YouTube URL required';
   if(S.uType==='news'&&!S.uNewspaper.trim())e.paper='Newspaper name required';
   if(Object.keys(e).length){set({uErrors:e});return;}
-  set({uploading:true,pct:5,uErrors:{}});
-  // Show yoga animation overlay
+  mut({uploading:true,pct:5,uErrors:{}});
+  // Close upload modal first, then show yoga overlay
+  set({showUpload:false});
+  await new Promise(r=>setTimeout(r,100));
   const yogaDiv = document.createElement('div');
   yogaDiv.id = 'yogaContainer';
   yogaDiv.innerHTML = rYogaOverlay();
@@ -652,7 +718,10 @@ function rCard(e){
   }else if(e.type==='video'){
     med=`<div class="card-media" data-lv="${encodeURIComponent(e.media_url||'')}"><div class="vid-ph"><div class="play-circle"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></div></div><div class="type-pill pv">🎥 Video</div></div>`;
   }
-  return`<div class="card">${med}<div class="card-body"><div class="card-event">${e.event_name||''}</div>${e.description?`<div class="card-desc">${e.description}</div>`:''}<div class="card-meta"><div class="meta-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${e.location||''}</div><div class="meta-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${fmtDate(e.event_date)}</div></div><span class="dist-badge ${dc(e.district)}">${e.district||''}</span></div><div class="card-footer"><span class="footer-date">${fmtDate(e.created_at)}</span>${e.type==='news'&&e.newspaper_name?`<span class="footer-paper">📰 ${e.newspaper_name}</span>`:''}</div></div>`;
+  const isSA=S.appUser?.role==='super_admin';
+  const pinBtn=isSA?`<button class="pin-btn ${e.is_pinned?'pinned':''}" data-pin-id="${e.id}" data-pin-val="${e.is_pinned?'true':'false'}" title="${e.is_pinned?'Unpin':'Pin to top'}">${e.is_pinned?'📌':'📍'}</button>`:'';
+  const pinnedBadge=e.is_pinned?'<div class="pinned-badge">📌 Pinned</div>':'';
+  return`<div class="card ${e.is_pinned?'card-pinned':''}">${pinnedBadge}${med}<div class="card-body"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px"><div class="card-event" style="flex:1">${e.event_name||''}</div>${pinBtn}</div>${e.description?`<div class="card-desc">${e.description}</div>`:''}<div class="card-meta"><div class="meta-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${e.location||''}</div><div class="meta-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${fmtDate(e.event_date)}</div></div><span class="dist-badge ${dc(e.district)}">${e.district||''}</span></div><div class="card-footer"><span class="footer-date">${fmtDate(e.created_at)}</span>${e.type==='news'&&e.newspaper_name?`<span class="footer-paper">📰 ${e.newspaper_name}</span>`:''}</div></div>`;
 }
 
 function rLoading(){return`<div class="loading"><div class="spinner"></div><p style="color:var(--text-secondary);font-size:13px">Loading IDY Wall...</p></div>`;}
@@ -739,6 +808,10 @@ function rLightbox(){
 
 function attachEvents(){
   document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>set({filter:b.dataset.filter})));
+  document.querySelectorAll('[data-pin-id]').forEach(b=>b.addEventListener('click',ev=>{
+    ev.stopPropagation();
+    togglePin(b.dataset.pinId, b.dataset.pinVal==='true');
+  }));
   q('loginBtn',el=>el.addEventListener('click',()=>set({showLogin:true,loginErr:''})));
   q('closeLogin',el=>el.addEventListener('click',()=>set({showLogin:false})));
   q('loginOverlay',el=>el.addEventListener('click',ev=>{if(ev.target===el)set({showLogin:false});}));
