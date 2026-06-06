@@ -673,11 +673,14 @@ async function submitEntry(){
       mut({pct:90});updateYogaProgress(90);
     }else if(S.uType==='news' && S.uNewsType==='link'){
       mediaUrl=(S.uNewsUrl||'').trim();
-      mut({pct:30});
+      mut({pct:30});updateYogaProgress(30);
       try{
-        const og=await fetchOGPreview(mediaUrl);
-        thumbUrl=og.image||null;
-        if(!S.uDesc.trim()&&og.description) S.uDesc=og.description.slice(0,200);
+        const ogRes = await fetch('https://api.microlink.io/?url='+encodeURIComponent(mediaUrl)+'&screenshot=true&meta=false&embed=screenshot.url');
+        const ogData = await ogRes.json();
+        if(ogData.status==='success'){
+          thumbUrl = ogData.data?.image?.url || ogData.data?.screenshot?.url || null;
+          if(!S.uDesc.trim() && ogData.data?.description) S.uDesc = ogData.data.description.slice(0,200);
+        }
       }catch(e){ thumbUrl=null; }
       mut({pct:90});updateYogaProgress(90);
     }else{
@@ -872,7 +875,10 @@ function rDetailModal(){
     const id=ytId(e.media_url||'');
     mediaPart='<div class="detail-media" style="position:relative"><iframe src="https://www.youtube.com/embed/'+id+'?autoplay=1" allowfullscreen allow="autoplay"></iframe><button class="detail-close" id="closeDetail">✕</button></div>';
   }else if(e.type==='news'&&e.news_type==='link'){
-    mediaPart='<div style="position:relative;background:#EFF6FF;padding:24px;text-align:center"><div style="font-size:48px;margin-bottom:8px">📰</div><button class="detail-close" id="closeDetail">✕</button></div>';
+    const hasOGImg = e.thumbnail_url&&e.thumbnail_url.length>5;
+    mediaPart='<div class="detail-media" style="position:relative">'
+      +(hasOGImg?'<img src="'+e.thumbnail_url+'" alt="'+(e.event_name||'')+'" style="width:100%;height:auto;display:block;max-height:220px;object-fit:cover"/>':'<div style="background:linear-gradient(135deg,#EFF6FF,#DBEAFE);height:140px;display:flex;align-items:center;justify-content:center;font-size:48px">📰</div>')
+      +'<button class="detail-close" id="closeDetail">✕</button></div>';
   }
 
   return '<div class="detail-overlay" id="detailOverlay">'
@@ -1032,12 +1038,11 @@ function attachEvents(){
   q('fileIn',el=>el.addEventListener('change',ev=>{const f=ev.target.files[0];if(f)set({uFile:f,uFileName:f.name});}));
   q('doUpload',el=>el.addEventListener('click',submitEntry));
   document.querySelectorAll('[data-detail-id]').forEach(el=>el.addEventListener('click',function(ev){
-    if(ev.target.closest('[data-pin-id]')) return; // don't trigger on pin btn
+    if(ev.target.closest('[data-pin-id]')) return;
     const entry = S.entries.find(e=>e.id===this.dataset.detailId);
     if(entry) set({detailEntry:entry});
   }));
-  document.querySelectorAll('[data-li]').forEach(el=>el.addEventListener('click',()=>set({lightbox:{type:'img',url:decodeURIComponent(el.dataset.li),cap:decodeURIComponent(el.dataset.lc||'')}})));
-  document.querySelectorAll('.news-lnk').forEach(el=>el.addEventListener('click',function(){ window.open(this.dataset.newsurl,'_blank'); }));
+
   document.querySelectorAll('[data-ly]').forEach(el=>el.addEventListener('click',()=>set({lightbox:{type:'yt',url:decodeURIComponent(el.dataset.ly)}})));
   document.querySelectorAll('[data-lv]').forEach(el=>el.addEventListener('click',()=>set({lightbox:{type:'vid',url:decodeURIComponent(el.dataset.lv)}})));
   q('lbOverlay',el=>el.addEventListener('click',ev=>{if(ev.target===el)set({lightbox:null});}));
