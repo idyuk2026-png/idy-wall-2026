@@ -471,7 +471,7 @@ const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const DISTRICTS=['Dehradun','Haridwar','Nainital','Almora','Pauri Garhwal','Tehri Garhwal','Chamoli','Uttarkashi','Pithoragarh','Bageshwar','Champawat','Udham Singh Nagar','Rudraprayag'];
 
 const S={
-  entries:[],loading:true,filter:'all',user:null,appUser:null,wallError:null,
+  entries:[],loading:true,filter:'all',distFilter:'all',user:null,appUser:null,wallError:null,
   showLogin:false,loginMobile:'',loginPass:'',loginErr:'',
   showChangePwd:false,newPass:'',newPass2:'',changePwdErr:'',
   showAdmin:false,adminDistrict:'',adminName:'',adminMobile:'',adminGenPwd:'',adminUsers:[],adminLoading:false,adminErr:'',adminLastMobile:'',
@@ -815,7 +815,9 @@ function cnts(){
 function render(){
   const app=document.getElementById('app');
   if(!app){ console.error('No #app element'); return; }
-  const filtered=S.filter==='all'?S.entries:S.entries.filter(e=>e.type===S.filter);
+  const filtered=S.entries
+    .filter(e=>S.filter==='all'||e.type===S.filter)
+    .filter(e=>S.distFilter==='all'||e.district===S.distFilter);
   const c=cnts();
   app.innerHTML=`
     ${rHeader(c)}
@@ -876,7 +878,19 @@ function rHeader(c){
 
 function rFilter(c){
   const fs=[{v:'all',l:'All',i:'🌸',n:c.all},{v:'photo',l:'Photos',i:'📷',n:c.photos},{v:'video',l:'Videos',i:'🎥',n:c.vids},{v:'youtube',l:'YouTube',i:'▶️',n:c.yt},{v:'news',l:'News',i:'📰',n:c.news}];
-  return`<div class="filter-bar"><div class="filter-inner"><span class="filter-label">Filter</span>${fs.map(f=>`<button class="f-btn ${S.filter===f.v?'active':''}" data-filter="${f.v}">${f.i} ${f.l} <span class="f-cnt">${f.n}</span></button>`).join('')}</div></div>`;
+  // Get districts that have entries
+  const activeDists = [...new Set(S.entries.map(e=>e.district).filter(Boolean))].sort();
+  return`<div class="filter-bar">
+    <div class="filter-inner">
+      <span class="filter-label">Type</span>
+      ${fs.map(f=>`<button class="f-btn ${S.filter===f.v?'active':''}" data-filter="${f.v}">${f.i} ${f.l} <span class="f-cnt">${f.n}</span></button>`).join('')}
+    </div>
+    ${activeDists.length>1?`<div class="filter-inner" style="margin-top:8px">
+      <span class="filter-label">District</span>
+      <button class="f-btn ${S.distFilter==='all'?'active':''}" data-dist="all">🗺️ All</button>
+      ${activeDists.map(d=>`<button class="f-btn ${S.distFilter===d?'active':''}" data-dist="${d}">${d}</button>`).join('')}
+    </div>`:''}
+  </div>`;
 }
 
 function rMasonry(entries){
@@ -1041,7 +1055,10 @@ function rAdminModal(){
             <div style="font-size:20px;font-weight:800;color:#166534;letter-spacing:3px;font-family:'Courier New',monospace">${S.adminGenPwd}</div>
           </div>
           <div style="font-size:11px;color:#166534;margin-bottom:10px;opacity:0.8">⚠️ Share via WhatsApp — user must change password on first login</div>
-          <button id="copyCredBtn" style="width:100%;padding:10px;background:#166534;color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">📋 Copy Credentials</button>
+          <div style="display:flex;gap:8px;margin-top:4px">
+          <button id="copyCredBtn" style="flex:1;padding:10px;background:#166534;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">📋 Copy</button>
+          <button id="waCredBtn" style="flex:2;padding:10px;background:#25D366;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">💬 Send via WhatsApp</button>
+        </div>
         </div>`:''}
       <button class="btn-p" id="doCreateUser" style="margin-bottom:0">➕ Create User</button>
 
@@ -1094,6 +1111,7 @@ function rLightbox(){
 
 function attachEvents(){
   document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>set({filter:b.dataset.filter})));
+  document.querySelectorAll('[data-dist]').forEach(b=>b.addEventListener('click',()=>set({distFilter:b.dataset.dist})));
   document.querySelectorAll('[data-pin-id]').forEach(b=>b.addEventListener('click',ev=>{
     ev.stopPropagation();
     togglePin(b.dataset.pinId, b.dataset.pinVal==='true');
@@ -1108,10 +1126,18 @@ function attachEvents(){
   q('aName',el=>el.addEventListener('input',ev=>mut({adminName:ev.target.value})));
   q('aDist',el=>el.addEventListener('change',ev=>mut({adminDistrict:ev.target.value})));
   q('doCreateUser',el=>el.addEventListener('click',async()=>{el.disabled=true;el.textContent='Creating...';await createDistrictUser();el.disabled=false;el.textContent='➕ Create User';}));
+  q('waCredBtn',el=>{
+    if(!el) return;
+    el.addEventListener('click',()=>{
+      const txt='*Login Details — IDY Wall*%0AMobile (Username): '+S.adminLastMobile+'%0APassword: '+S.adminGenPwd+'%0AApp: https://idy2026.vercel.app%0A%0APlease upload all photos, videos and news related to your district Yoga events on this IDY Wall app after logging in with the above username and password.';
+      const phone='91'+S.adminLastMobile;
+      window.open('https://wa.me/'+phone+'?text='+txt,'_blank');
+    });
+  });
   q('copyCredBtn',el=>{
     if(!el) return;
     el.addEventListener('click',()=>{
-      const txt='Login Details\nMobile: '+S.adminLastMobile+'\nPassword: '+S.adminGenPwd+'\nApp: https://idy2026.vercel.app';
+      const txt='Login Details\nMobile (Username): '+S.adminLastMobile+'\nPassword: '+S.adminGenPwd+'\nApp: https://idy2026.vercel.app\n\nPlease upload all photos, videos and news related to your district Yoga events on this IDY Wall app after logging in with the above username and password.';
       if(navigator.clipboard && navigator.clipboard.writeText){
         navigator.clipboard.writeText(txt).then(()=>{
           el.textContent='✅ Copied!';
