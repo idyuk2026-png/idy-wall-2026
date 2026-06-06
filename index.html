@@ -633,12 +633,12 @@ async function submitEntry(){
       district:S.uDistrict,event_date:S.uDate,description:S.uDesc.trim()||null,
       newspaper_name:S.uType==='news'?S.uNewspaper.trim():null,
       news_type:S.uType==='news'?S.uNewsType:null,
-      og_title:S.uType==='news'&&S.uNewsType==='link'?((S.uDesc||'').slice(0,200)||null):null,
+      og_title:S.uType==='news'&&S.uNewsType==='link'?(S._ogTitle||null):null,
       media_url:mediaUrl,thumbnail_url:thumbUrl,
-      uploaded_by:S.appUser?.name||S.appUser?.mobile,created_at:new Date().toISOString()
+      uploaded_by:(S.appUser?.name||S.appUser?.mobile||'unknown'),created_at:new Date().toISOString()
     };
-    const{error}=await sb.from('idy_entries').insert([entry]);
-    if(error)throw error;
+    const{data:ins,error}=await sb.from('idy_entries').insert([entry]).select();
+    if(error)throw new Error('DB: '+error.message);
     mut({pct:100});updateYogaProgress(100);
     await new Promise(r=>setTimeout(r,900));
     stopYogaAnimation();
