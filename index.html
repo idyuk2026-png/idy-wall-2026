@@ -347,23 +347,34 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
 .pin-btn:hover{background:rgba(232,97,10,0.08);border-color:var(--saffron);}
 .pin-btn.pinned{background:rgba(232,97,10,0.1);border-color:var(--saffron);}
 
-.install-btn{
+.install-strip{
   display:none;
+  width:100%;
+  background:rgba(232,97,10,0.15);
+  border-bottom:1px solid rgba(232,97,10,0.25);
+  padding:8px 16px;
   align-items:center;
-  gap:6px;
-  background:rgba(255,255,255,0.08);
-  border:1px solid rgba(255,255,255,0.2);
-  color:rgba(255,255,255,0.85);
-  padding:9px 16px;
-  border-radius:100px;
-  font-size:12.5px;
-  font-weight:600;
+  justify-content:center;
+  gap:8px;
   cursor:pointer;
+  font-size:12px;
+  font-weight:600;
+  color:var(--saffron-light);
   font-family:'DM Sans',sans-serif;
-  transition:all 0.2s;
-  white-space:nowrap;
 }
-.install-btn:hover{background:rgba(255,255,255,0.15);color:#fff;}
+.install-strip:hover{background:rgba(232,97,10,0.22);}
+.install-btn{ display:none; } /* hidden - using strip instead */
+.header-action-btn{
+  display:flex;align-items:center;gap:5px;
+  border:none;border-radius:8px;
+  padding:7px 12px;font-size:12px;font-weight:600;
+  cursor:pointer;font-family:'DM Sans',sans-serif;
+  transition:all 0.2s;white-space:nowrap;
+}
+.btn-upload{background:var(--saffron);color:white;box-shadow:0 2px 8px rgba(232,97,10,0.35);}
+.btn-manage{background:var(--green);color:white;box-shadow:0 2px 8px rgba(26,92,53,0.3);}
+.btn-logout{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.7);}
+.btn-logout:hover{color:#fff;}
 
 .news-lnk{cursor:pointer;position:relative;}
 .news-lnk-overlay{
@@ -379,6 +390,38 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
 }
 .news-lnk img{transition:transform 0.4s ease;}
 .news-lnk:hover img{transform:scale(1.04);}
+
+/* COMPACT CARD DESIGN */
+.card-body{padding:8px 10px 4px;}
+.card-event{font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3;margin-bottom:4px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.card-desc{display:none;} /* hidden by default, show in detail view */
+.card-meta{flex-direction:row;flex-wrap:wrap;gap:4px;margin-bottom:5px;}
+.meta-row{font-size:10px;color:var(--text-secondary);}
+.meta-row svg{width:9px;height:9px;}
+.dist-badge{font-size:9.5px;padding:2px 7px;margin-bottom:0;}
+.card-footer{padding:5px 10px 8px;border-top:1px solid rgba(0,0,0,0.04);}
+.footer-date{font-size:9.5px;}
+.footer-paper{font-size:10px;}
+
+/* Detail modal */
+.detail-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:2000;display:flex;align-items:center;justify-content:center;padding:16px;animation:fadeIn 0.2s ease;}
+.detail-modal{background:#fff;border-radius:20px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;animation:scaleIn 0.25s ease;}
+.detail-media{width:100%;position:relative;}
+.detail-media img{width:100%;height:auto;display:block;}
+.detail-media video{width:100%;display:block;}
+.detail-media iframe{width:100%;aspect-ratio:16/9;border:none;}
+.detail-body{padding:16px 18px 20px;}
+.detail-title{font-family:'Cinzel',serif;font-size:17px;font-weight:700;color:var(--dark);margin-bottom:10px;line-height:1.3;}
+.detail-meta-row{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-secondary);margin-bottom:5px;}
+.detail-meta-row svg{width:13px;height:13px;flex-shrink:0;}
+.detail-desc{font-size:13px;color:var(--text-secondary);line-height:1.6;margin-top:10px;padding-top:10px;border-top:1px solid rgba(0,0,0,0.06);}
+.detail-close{position:absolute;top:12px;right:12px;width:32px;height:32px;background:rgba(0,0,0,0.5);border:none;color:#fff;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:5;}
+
+@media(max-width:599px){
+  .card-body{padding:7px 9px 3px;}
+  .card-event{font-size:12px;}
+}
 </style>
 </head>
 <body>
@@ -401,7 +444,7 @@ const S={
   uEvent:'',uLocation:'',uDistrict:'',uDate:tod(),
   uDesc:'',uNewspaper:'',uYoutube:'',uNewsType:'cutting',uNewsUrl:'',
   uErrors:{},uploading:false,pct:0,
-  lightbox:null,toast:null
+  lightbox:null,toast:null,detailEntry:null
 };
 function tod(){return new Date().toISOString().split('T')[0];}
 
@@ -629,6 +672,7 @@ async function submitEntry(){
       thumbUrl=id?`https://img.youtube.com/vi/${id}/hqdefault.jpg`:null;
       mut({pct:90});updateYogaProgress(90);
     }else{
+      if(!S.uFile) throw new Error('No file selected. Please select a file first.');
       const r=await uploadCloudinary(S.uFile,p=>{mut({pct:p});updateYogaProgress(p);});
       mediaUrl=r.url;thumbUrl=r.thumb;mut({pct:92});updateYogaProgress(92);
     }
@@ -717,6 +761,7 @@ function render(){
     ${S.showAdmin?rAdminModal():''}
     ${S.showUpload?rUploadModal():''}
     ${S.lightbox?rLightbox():''}
+    ${S.detailEntry?rDetailModal():''}
     ${S.toast?`<div class="toast ${S.toast.type}">${S.toast.msg}</div>`:''}
   `;
   try{ attachEvents(); }catch(e){ console.error('attachEvents error:',e); }
@@ -729,10 +774,9 @@ function rHeader(c){
   const right=S.user
     ?`<div class="header-right">
         <div class="user-pill"><div class="dot"></div>${isSuperAdmin?'Super Admin':S.appUser?.name||S.appUser?.mobile||'User'}</div>
-        ${isSuperAdmin?`<button class="upload-fab" style="background:var(--green)" id="openAdmin">⚙️ Manage Users</button>`:''}
-        ${(isSuperAdmin||isDistAdmin)?`<button class="upload-fab" id="openUpload">＋ Upload</button>`:''}
-        <button class="install-btn" id="installBtn">📲 Install</button>
-        <button class="logout-btn" id="logoutBtn">Logout</button>
+        ${isSuperAdmin?`<button class="header-action-btn btn-manage" id="openAdmin">⚙️ Users</button>`:''}
+        ${(isSuperAdmin||isDistAdmin)?`<button class="header-action-btn btn-upload" id="openUpload">＋ Upload</button>`:''}
+        <button class="header-action-btn btn-logout" id="logoutBtn">Exit</button>
       </div>`
     :`<div class="header-right">
         <button class="login-btn" id="loginBtn">
@@ -741,6 +785,7 @@ function rHeader(c){
         </button>
       </div>`;
   return`<header class="header">
+    <div class="install-strip" id="installStrip">📲 Install as App — tap to add to home screen</div>
     <div class="header-geo"></div>
     <div class="header-top">
       <div class="header-flag"><div class="flag-s"></div><div class="flag-w"></div><div class="flag-g"></div></div>
@@ -806,6 +851,35 @@ function rWallError(){
     +'<button onclick="loadEntries()" style="margin-top:16px;padding:10px 24px;background:var(--saffron);color:white;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif">Retry</button>'
     +'</div>';
 }
+function rDetailModal(){
+  const e = S.detailEntry;
+  if(!e) return '';
+  let mediaPart = '';
+  if(e.type==='photo'||(e.type==='news'&&(e.news_type||'cutting')!=='link')){
+    mediaPart='<div class="detail-media"><img src="'+(e.media_url||'')+'" alt="'+(e.event_name||'')+'"/><button class="detail-close" id="closeDetail">✕</button></div>';
+  }else if(e.type==='video'){
+    mediaPart='<div class="detail-media" style="position:relative"><video src="'+(e.media_url||'')+'" controls autoplay></video><button class="detail-close" id="closeDetail">✕</button></div>';
+  }else if(e.type==='youtube'){
+    const id=ytId(e.media_url||'');
+    mediaPart='<div class="detail-media" style="position:relative"><iframe src="https://www.youtube.com/embed/'+id+'?autoplay=1" allowfullscreen allow="autoplay"></iframe><button class="detail-close" id="closeDetail">✕</button></div>';
+  }else if(e.type==='news'&&e.news_type==='link'){
+    mediaPart='<div style="position:relative;background:#EFF6FF;padding:24px;text-align:center"><div style="font-size:48px;margin-bottom:8px">📰</div><button class="detail-close" id="closeDetail">✕</button></div>';
+  }
+
+  return '<div class="detail-overlay" id="detailOverlay">'
+    +'<div class="detail-modal">'
+    +mediaPart
+    +'<div class="detail-body">'
+    +'<div class="detail-title">'+(e.event_name||'')+'</div>'
+    +'<div class="detail-meta-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>'+(e.location||'')+'</div>'
+    +'<div class="detail-meta-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'+fmtDate(e.event_date)+'</div>'
+    +'<span class="dist-badge '+dc(e.district)+'" style="margin-top:6px;display:inline-block">'+(e.district||'')+'</span>'
+    +(e.newspaper_name?'<div class="detail-meta-row" style="margin-top:6px">📰 '+(e.newspaper_name||'')+'</div>':'')
+    +(e.description?'<div class="detail-desc">'+(e.description||'')+'</div>':'')
+    +(e.type==='news'&&e.news_type==='link'?('<a href="'+(e.media_url||'#')+'" target="_blank" style="display:block;margin-top:14px;background:#1E40AF;color:white;padding:10px;border-radius:10px;text-align:center;font-weight:600;font-size:13px;text-decoration:none">&#128279; Read Full Article</a>'):'')
+    +'</div></div></div>';
+}
+
 function rLoading(){return`<div class="loading"><div class="spinner"></div><p style="color:var(--text-secondary);font-size:13px">Loading IDY Wall...</p></div>`;}
 function rEmpty(){return`<div class="empty"><div class="empty-icon">🪷</div><div class="empty-title">Wall is empty</div><div class="empty-sub">${S.filter!=='all'?'No entries for this filter.':'No entries yet — upload the first one!'}</div></div>`;}
 
@@ -948,11 +1022,18 @@ function attachEvents(){
   document.querySelectorAll('[data-newstype]').forEach(el=>el.addEventListener('click',()=>set({uNewsType:el.dataset.newstype,uErrors:{}})));
   q('fileIn',el=>el.addEventListener('change',ev=>{const f=ev.target.files[0];if(f)set({uFile:f,uFileName:f.name});}));
   q('doUpload',el=>el.addEventListener('click',submitEntry));
+  document.querySelectorAll('[data-detail-id]').forEach(el=>el.addEventListener('click',function(ev){
+    if(ev.target.closest('[data-pin-id]')) return; // don't trigger on pin btn
+    const entry = S.entries.find(e=>e.id===this.dataset.detailId);
+    if(entry) set({detailEntry:entry});
+  }));
   document.querySelectorAll('[data-li]').forEach(el=>el.addEventListener('click',()=>set({lightbox:{type:'img',url:decodeURIComponent(el.dataset.li),cap:decodeURIComponent(el.dataset.lc||'')}})));
   document.querySelectorAll('.news-lnk').forEach(el=>el.addEventListener('click',function(){ window.open(this.dataset.newsurl,'_blank'); }));
   document.querySelectorAll('[data-ly]').forEach(el=>el.addEventListener('click',()=>set({lightbox:{type:'yt',url:decodeURIComponent(el.dataset.ly)}})));
   document.querySelectorAll('[data-lv]').forEach(el=>el.addEventListener('click',()=>set({lightbox:{type:'vid',url:decodeURIComponent(el.dataset.lv)}})));
   q('lbOverlay',el=>el.addEventListener('click',ev=>{if(ev.target===el)set({lightbox:null});}));
+  q('detailOverlay',el=>el.addEventListener('click',ev=>{if(ev.target===el)set({detailEntry:null});}));
+  q('closeDetail',el=>el.addEventListener('click',()=>set({detailEntry:null})));
   q('lbClose',el=>el.addEventListener('click',()=>set({lightbox:null})));
 }
 function q(id,fn){const el=document.getElementById(id);if(el)fn(el);}
@@ -976,26 +1057,23 @@ let deferredPrompt = null;
 window.addEventListener('beforeinstallprompt', function(e){
   e.preventDefault();
   deferredPrompt = e;
-  document.querySelectorAll('#installBtn').forEach(function(b){ b.style.display='flex'; });
+  const s=document.getElementById('installStrip'); if(s) s.style.display='flex';
 });
 window.addEventListener('appinstalled', function(){
   deferredPrompt = null;
-  document.querySelectorAll('#installBtn').forEach(function(b){ b.style.display='none'; });
+  const s2=document.getElementById('installStrip'); if(s2) s2.style.display='none';
 });
 function setupInstallBtn(){
-  document.querySelectorAll('#installBtn').forEach(function(btn){
-    if(deferredPrompt) btn.style.display='flex';
-    btn.onclick = function(){
-      if(!deferredPrompt) return;
-      deferredPrompt.prompt();
-      deferredPrompt.userChoice.then(function(r){
-        if(r.outcome==='accepted'){
-          deferredPrompt=null;
-          document.querySelectorAll('#installBtn').forEach(function(b){ b.style.display='none'; });
-        }
-      });
-    };
-  });
+  const strip = document.getElementById('installStrip');
+  if(!strip) return;
+  if(deferredPrompt) strip.style.display='flex';
+  strip.onclick = function(){
+    if(!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function(r){
+      if(r.outcome==='accepted'){ deferredPrompt=null; strip.style.display='none'; }
+    });
+  };
 }
 </script>
 </body>
