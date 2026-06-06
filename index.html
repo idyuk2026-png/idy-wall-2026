@@ -1242,7 +1242,16 @@ function attachEvents(){
   q('openAdmin',el=>el.addEventListener('click',()=>{set({showAdmin:true,adminGenPwd:'',adminErr:''});loadAdminUsers();}));
   q('closeAdmin',el=>el.addEventListener('click',()=>set({showAdmin:false})));
   q('adminOverlay',el=>el.addEventListener('click',ev=>{if(ev.target===el)set({showAdmin:false});}));
-  q('aMobile',el=>el.addEventListener('input',ev=>mut({adminMobile:ev.target.value.replace(/\D/g,'')})));
+  q('aMobile',el=>el.addEventListener('input',ev=>{
+    let v=ev.target.value;
+    v=v.replace(/\s/g,'');        // remove spaces
+    v=v.replace(/^\+91/,'');      // remove +91
+    v=v.replace(/^91(?=\d{10}$)/,''); // remove 91 prefix if 12 digits
+    v=v.replace(/\D/g,'');        // remove non-digits
+    v=v.slice(0,10);               // max 10 digits
+    ev.target.value=v;
+    mut({adminMobile:v});
+  }));
   q('aName',el=>el.addEventListener('input',ev=>mut({adminName:ev.target.value})));
   q('aDist',el=>el.addEventListener('change',ev=>mut({adminDistrict:ev.target.value})));
   q('doCreateUser',el=>el.addEventListener('click',async()=>{el.disabled=true;el.textContent='Creating...';await createDistrictUser();el.disabled=false;el.textContent='➕ Create User';}));
@@ -1266,7 +1275,16 @@ function attachEvents(){
       }else{ fallbackCopy(txt,el); }
     });
   });
-  q('lMobile',el=>el.addEventListener('input',ev=>{S.loginMobile=ev.target.value.replace(/\D/g,'');/* no re-render */}));
+  q('lMobile',el=>el.addEventListener('input',ev=>{
+    let v=ev.target.value;
+    v=v.replace(/\s/g,'');
+    v=v.replace(/^\+91/,'');
+    v=v.replace(/^91(?=\d{10}$)/,'');
+    v=v.replace(/\D/g,'');
+    v=v.slice(0,10);
+    ev.target.value=v;
+    S.loginMobile=v;
+  }));
   q('lPass',el=>{el.addEventListener('input',ev=>{S.loginPass=ev.target.value;});el.addEventListener('keydown',ev=>{if(ev.key==='Enter')document.getElementById('doLogin')?.click();});});
   q('doLogin',el=>el.addEventListener('click',async()=>{el.disabled=true;el.textContent='Logging in...';await doLogin();el.disabled=false;el.textContent='Login →';}));
   q('doChangePwd',el=>el.addEventListener('click',async()=>{el.disabled=true;el.textContent='Saving...';await doChangePassword();el.disabled=false;el.textContent='✅ Save Password';}));
