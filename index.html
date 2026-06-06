@@ -459,8 +459,15 @@ function mut(p){Object.assign(S,p);}  // update state only, no render
 
 async function loadEntries(){
   set({loading:true});
-  const{data}=await sb.from('idy_entries').select('*').order('is_pinned',{ascending:false}).order('created_at',{ascending:false});
-  set({loading:false,entries:data||[]});
+  try{
+    const{data,error}=await sb.from('idy_entries').select('*').order('is_pinned',{ascending:false}).order('created_at',{ascending:false});
+    if(error)throw error;
+    set({loading:false,entries:data||[]});
+  }catch(e){
+    console.error('loadEntries error:',e);
+    set({loading:false,entries:[]});
+    showToast('Error loading entries: '+e.message,'er');
+  }
 }
 
 async function togglePin(id, currentVal){
@@ -730,7 +737,13 @@ function rFilter(c){
   return`<div class="filter-bar"><div class="filter-inner"><span class="filter-label">Filter</span>${fs.map(f=>`<button class="f-btn ${S.filter===f.v?'active':''}" data-filter="${f.v}">${f.i} ${f.l} <span class="f-cnt">${f.n}</span></button>`).join('')}</div></div>`;
 }
 
-function rMasonry(entries){return`<div class="masonry">${entries.map(e=>rCard(e)).join('')}</div>`;}
+function rMasonry(entries){
+  const cards = entries.map(e=>{
+    try{ return rCard(e); }
+    catch(err){ console.error('Card render error',e.id, err); return ''; }
+  }).join('');
+  return`<div class="masonry">${cards}</div>`;
+}
 
 function rCard(e){
   const pill={photo:'pp',video:'pv',youtube:'py',news:'pn'};
@@ -745,12 +758,12 @@ function rCard(e){
   }else if(e.type==='video'){
     const vThumb=e.thumbnail_url||'';
     med=`<div class="card-media" data-lv="${encodeURIComponent(e.media_url||'')}">
-      ${vThumb
-        ?`<img src="${vThumb}" alt="${e.event_name||''}" loading="lazy" style="width:100%;height:auto;display:block;"/>`
-        :`<div class="vid-ph"></div>`}
+      ${vThumb?`<img src="${vThumb}" alt="${e.event_name||''}" loading="lazy" style="width:100%;height:auto;display:block;"/>`:`<div class="vid-ph"></div>`}
       <div class="play-over"><div class="play-circle"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></div></div>
       <div class="type-pill pv">🎥 Video</div>
     </div>`;
+  }else{
+    med=`<div class="card-media"><div class="vid-ph"></div></div>`;
   }
   const isSA=S.appUser?.role==='super_admin';
   const pinBtn=isSA?`<button class="pin-btn ${e.is_pinned?'pinned':''}" data-pin-id="${e.id}" data-pin-val="${e.is_pinned?'true':'false'}" title="${e.is_pinned?'Unpin':'Pin to top'}">${e.is_pinned?'📌':'📍'}</button>`:'';
