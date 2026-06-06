@@ -422,6 +422,11 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
   .card-body{padding:7px 9px 3px;}
   .card-event{font-size:12px;}
 }
+
+.card{ cursor:pointer; }
+.card *{ pointer-events:none; }
+.card .pin-btn{ pointer-events:all; }
+.card a{ pointer-events:all; }
 </style>
 </head>
 <body>
@@ -737,6 +742,21 @@ async function fetchOGPreview(url){
   return {title:'',image:'',description:''};
 }
 
+
+function fallbackCopy(text, btn){
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try{
+    document.execCommand('copy');
+    if(btn){ btn.textContent='✅ Copied!'; setTimeout(()=>{ btn.textContent='📋 Copy Credentials'; },2500); }
+  }catch(e){ alert('Copy failed. Text:\n'+text); }
+  document.body.removeChild(ta);
+}
+
 function showToast(msg,type){
   set({toast:{msg,type}});
   setTimeout(()=>set({toast:null}),3500);
@@ -947,7 +967,7 @@ function rAdminModal(){
             <div style="font-size:20px;font-weight:800;color:#166534;letter-spacing:3px;font-family:'Courier New',monospace">${S.adminGenPwd}</div>
           </div>
           <div style="font-size:11px;color:#166534;margin-bottom:10px;opacity:0.8">⚠️ Share via WhatsApp — user must change password on first login</div>
-          <button onclick="navigator.clipboard.writeText('Login Details:\nMobile: ${S.adminLastMobile}\nPassword: ${S.adminGenPwd}\nApp: https://idy2026.vercel.app');this.textContent='✅ Copied!';setTimeout(()=>this.textContent='📋 Copy Both',2000)" style="width:100%;padding:10px;background:#166534;color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">📋 Copy Both (Mobile + Password)</button>
+          <button id="copyCredBtn" style="width:100%;padding:10px;background:#166534;color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">📋 Copy Credentials</button>
         </div>`:''}
       <button class="btn-p" id="doCreateUser" style="margin-bottom:0">➕ Create User</button>
 
@@ -1014,6 +1034,18 @@ function attachEvents(){
   q('aName',el=>el.addEventListener('input',ev=>mut({adminName:ev.target.value})));
   q('aDist',el=>el.addEventListener('change',ev=>mut({adminDistrict:ev.target.value})));
   q('doCreateUser',el=>el.addEventListener('click',async()=>{el.disabled=true;el.textContent='Creating...';await createDistrictUser();el.disabled=false;el.textContent='➕ Create User';}));
+  q('copyCredBtn',el=>{
+    if(!el) return;
+    el.addEventListener('click',()=>{
+      const txt='Login Details\nMobile: '+S.adminLastMobile+'\nPassword: '+S.adminGenPwd+'\nApp: https://idy2026.vercel.app';
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(txt).then(()=>{
+          el.textContent='✅ Copied!';
+          setTimeout(()=>{ el.textContent='📋 Copy Credentials'; },2500);
+        }).catch(()=>{ fallbackCopy(txt,el); });
+      }else{ fallbackCopy(txt,el); }
+    });
+  });
   q('lMobile',el=>el.addEventListener('input',ev=>{S.loginMobile=ev.target.value.replace(/\D/g,'');/* no re-render */}));
   q('lPass',el=>{el.addEventListener('input',ev=>{S.loginPass=ev.target.value;});el.addEventListener('keydown',ev=>{if(ev.key==='Enter')document.getElementById('doLogin')?.click();});});
   q('doLogin',el=>el.addEventListener('click',async()=>{el.disabled=true;el.textContent='Logging in...';await doLogin();el.disabled=false;el.textContent='Login →';}));
