@@ -1276,9 +1276,17 @@ function attachEvents(){
   q('waCredBtn',el=>{
     if(!el) return;
     el.addEventListener('click',()=>{
-      const txt='*Login Details — IDY Wall*%0AMobile (Username): '+S.adminLastMobile+'%0APassword: '+S.adminGenPwd+'%0AApp: https://idy2026.vercel.app%0A%0APlease upload all photos, videos and news related to your district Yoga events on this IDY Wall app after logging in with the above username and password.';
-      const phone='91'+S.adminLastMobile;
-      window.open('https://wa.me/'+phone+'?text='+txt,'_blank');
+      const msg = [
+        '*Login Details — IDY Wall*',
+        'Mobile (Username): ' + S.adminLastMobile,
+        'Password: ' + S.adminGenPwd,
+        'App: https://idy2026.vercel.app',
+        '',
+        'Please upload all photos, videos and news related to your district Yoga events on this IDY Wall app after logging in with the above username and password.'
+      ].join('\n');
+      const phone = '91' + S.adminLastMobile;
+      const url = 'https://wa.me/' + phone + '?text=' + encodeURIComponent(msg);
+      window.open(url, '_blank');
     });
   });
   q('copyCredBtn',el=>{
