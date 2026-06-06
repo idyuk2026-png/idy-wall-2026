@@ -55,14 +55,54 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
 .stat-l{font-size:10px;color:rgba(255,255,255,0.38);letter-spacing:1.8px;text-transform:uppercase;margin-top:5px;}
 
 /* FILTER */
-.filter-bar{position:sticky;top:0;z-index:50;background:rgba(251,245,235,0.94);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);padding:12px 24px;}
-.filter-inner{max-width:1440px;margin:0 auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.filter-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-secondary);margin-right:4px;flex-shrink:0;}
-.f-btn{display:flex;align-items:center;gap:5px;padding:7px 15px;border-radius:100px;border:1.5px solid rgba(0,0,0,0.08);background:#fff;font-size:12.5px;font-weight:500;color:var(--text-secondary);cursor:pointer;transition:all 0.18s;font-family:'DM Sans',sans-serif;white-space:nowrap;}
-.f-btn:hover{border-color:var(--saffron);color:var(--saffron);}
-.f-btn.active{background:var(--saffron);border-color:var(--saffron);color:#fff;font-weight:600;}
-.f-cnt{background:rgba(0,0,0,0.06);color:var(--text-secondary);border-radius:100px;padding:1px 6px;font-size:10px;font-weight:700;}
-.f-btn.active .f-cnt{background:rgba(255,255,255,0.25);color:#fff;}
+
+.filter-bar{position:sticky;top:0;z-index:50;background:rgba(251,245,235,0.94);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);padding:10px 16px;}
+.filter-inner{max-width:1440px;margin:0 auto;display:flex;align-items:center;gap:10px;}
+.dd-wrap{position:relative;}
+.dd-btn{
+  display:flex;align-items:center;gap:6px;
+  padding:8px 14px;border-radius:100px;
+  border:1.5px solid rgba(0,0,0,0.1);background:#fff;
+  font-size:13px;font-weight:500;color:var(--text-primary);
+  cursor:pointer;font-family:'DM Sans',sans-serif;
+  transition:all 0.18s;white-space:nowrap;
+}
+.dd-btn:hover{border-color:var(--saffron);}
+.dd-btn.active{background:var(--saffron);border-color:var(--saffron);color:#fff;font-weight:600;}
+.dd-btn .dd-count{
+  background:rgba(0,0,0,0.08);color:inherit;
+  border-radius:100px;padding:1px 7px;font-size:11px;font-weight:700;
+}
+.dd-btn.active .dd-count{background:rgba(255,255,255,0.25);}
+.dd-btn .dd-arrow{font-size:10px;opacity:0.6;transition:transform 0.2s;}
+.dd-btn.open .dd-arrow{transform:rotate(180deg);}
+.dd-menu{
+  position:absolute;top:calc(100% + 6px);left:0;
+  background:#fff;border:1px solid rgba(0,0,0,0.08);
+  border-radius:14px;padding:6px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.12);
+  z-index:200;min-width:180px;
+  animation:scaleIn 0.15s ease;
+  transform-origin:top left;
+}
+.dd-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:9px 12px;border-radius:8px;
+  font-size:13px;font-weight:500;color:var(--text-primary);
+  cursor:pointer;transition:background 0.15s;gap:8px;
+  border:none;background:none;width:100%;text-align:left;
+  font-family:'DM Sans',sans-serif;
+}
+.dd-item:hover{background:rgba(232,97,10,0.06);}
+.dd-item.selected{color:var(--saffron);font-weight:600;background:rgba(232,97,10,0.06);}
+.dd-item .dd-item-count{
+  font-size:11px;color:var(--text-secondary);
+  background:rgba(0,0,0,0.05);border-radius:100px;
+  padding:1px 7px;font-weight:600;flex-shrink:0;
+}
+.dd-item.selected .dd-item-count{background:rgba(232,97,10,0.12);color:var(--saffron);}
+.dd-check{color:var(--saffron);font-size:14px;flex-shrink:0;}
+
 
 /* MAIN */
 .main{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:16px 8px 80px;}
@@ -457,6 +497,25 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
 .card *{ pointer-events:none; }
 .card .pin-btn{ pointer-events:all; }
 .card a{ pointer-events:all; }
+
+/* SCROLL FADE-IN ANIMATION */
+.card{
+  opacity:0;
+  transform:translateY(24px);
+  transition:opacity 0.5s ease, transform 0.5s ease;
+}
+.card.visible{
+  opacity:1;
+  transform:translateY(0);
+}
+.card.card-pinned{
+  opacity:0;
+  transform:translateY(24px);
+}
+.card.card-pinned.visible{
+  opacity:1;
+  transform:translateY(0);
+}
 </style>
 </head>
 <body>
@@ -471,7 +530,7 @@ const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const DISTRICTS=['Dehradun','Haridwar','Nainital','Almora','Pauri Garhwal','Tehri Garhwal','Chamoli','Uttarkashi','Pithoragarh','Bageshwar','Champawat','Udham Singh Nagar','Rudraprayag'];
 
 const S={
-  entries:[],loading:true,filter:'all',distFilter:'all',user:null,appUser:null,wallError:null,
+  entries:[],loading:true,filter:'all',distFilter:'all',showTypeDD:false,showDistDD:false,user:null,appUser:null,wallError:null,
   showLogin:false,loginMobile:'',loginPass:'',loginErr:'',
   showChangePwd:false,newPass:'',newPass2:'',changePwdErr:'',
   showAdmin:false,adminDistrict:'',adminName:'',adminMobile:'',adminGenPwd:'',adminUsers:[],adminLoading:false,adminErr:'',adminLastMobile:'',
@@ -835,6 +894,24 @@ function render(){
   `;
   try{ attachEvents(); }catch(e){ console.error('attachEvents error:',e); }
   try{ setupInstallBtn(); }catch(e){}
+  requestAnimationFrame(()=>{ try{ initScrollObserver(); }catch(e){} });
+}
+
+function initScrollObserver(){
+  const cards=document.querySelectorAll('.card');
+  if(!cards.length) return;
+  const io=new IntersectionObserver((entries)=>{
+    let delay=0;
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        const d=delay;
+        setTimeout(()=>entry.target.classList.add('visible'), d);
+        delay+=50;
+        io.unobserve(entry.target);
+      }
+    });
+  },{threshold:0.05,rootMargin:'0px 0px -30px 0px'});
+  cards.forEach(c=>io.observe(c));
 }
 
 function rHeader(c){
@@ -863,7 +940,7 @@ function rHeader(c){
     <div class="header-body">
       <div class="eyebrow"><div class="pulse"></div><span>International Day of Yoga · 21 June 2026</span></div>
       <h1 class="h-title"><span class="cs">Uttarakhand</span><br>IDY <span class="cg">Wall</span></h1>
-      <p class="h-deva">Devbhoomi ki awaaz — Uttarakhand Yoga Mahotsav 2026</p>
+      <p class="h-deva">Memories of IDY 2026</p>
       <div class="h-rule"></div>
       <div class="stats-row">
         <div class="stat-cell"><div class="stat-n">${c.all}</div><div class="stat-l">Entries</div></div>
@@ -877,19 +954,55 @@ function rHeader(c){
 }
 
 function rFilter(c){
-  const fs=[{v:'all',l:'All',i:'🌸',n:c.all},{v:'photo',l:'Photos',i:'📷',n:c.photos},{v:'video',l:'Videos',i:'🎥',n:c.vids},{v:'youtube',l:'YouTube',i:'▶️',n:c.yt},{v:'news',l:'News',i:'📰',n:c.news}];
-  // Get districts that have entries
-  const activeDists = [...new Set(S.entries.map(e=>e.district).filter(Boolean))].sort();
+  const activeDists=[...(new Set(S.entries.map(e=>e.district).filter(Boolean)))].sort();
+  const types=[
+    {v:'all',l:'All',i:'🌸',n:c.all},
+    {v:'photo',l:'Photos',i:'📷',n:c.photos},
+    {v:'video',l:'Videos',i:'🎥',n:c.vids+c.yt},
+    {v:'youtube',l:'YouTube',i:'▶️',n:c.yt},
+    {v:'news',l:'News',i:'📰',n:c.news}
+  ];
+  const selType=types.find(t=>t.v===S.filter)||types[0];
+  const selDistCount=S.distFilter==='all'?c.all:S.entries.filter(e=>e.district===S.distFilter&&(S.filter==='all'||e.type===S.filter)).length;
   return`<div class="filter-bar">
     <div class="filter-inner">
-      <span class="filter-label">Type</span>
-      ${fs.map(f=>`<button class="f-btn ${S.filter===f.v?'active':''}" data-filter="${f.v}">${f.i} ${f.l} <span class="f-cnt">${f.n}</span></button>`).join('')}
+      <div class="dd-wrap" id="typeDDWrap">
+        <button class="dd-btn ${S.filter!=='all'?'active':''} ${S.showTypeDD?'open':''}" id="typeDDBtn">
+          ${selType.i} ${selType.l}
+          ${S.filter!=='all'?`<span class="dd-count">${selType.n}</span>`:''}
+          <span class="dd-arrow">▾</span>
+        </button>
+        ${S.showTypeDD?`<div class="dd-menu" id="typeMenu">
+          ${types.map(t=>`<button class="dd-item ${S.filter===t.v?'selected':''}" data-setfilter="${t.v}">
+            <span>${t.i} ${t.l}</span>
+            <span class="dd-item-count">${t.n}</span>
+            ${S.filter===t.v?'<span class="dd-check">✓</span>':''}
+          </button>`).join('')}
+        </div>`:''}
+      </div>
+      <div class="dd-wrap" id="distDDWrap">
+        <button class="dd-btn ${S.distFilter!=='all'?'active':''} ${S.showDistDD?'open':''}" id="distDDBtn">
+          📍 ${S.distFilter==='all'?'All Districts':S.distFilter}
+          ${S.distFilter!=='all'?`<span class="dd-count">${selDistCount}</span>`:''}
+          <span class="dd-arrow">▾</span>
+        </button>
+        ${S.showDistDD?`<div class="dd-menu" id="distMenu" style="max-height:280px;overflow-y:auto">
+          <button class="dd-item ${S.distFilter==='all'?'selected':''}" data-setdist="all">
+            <span>🗺️ All Districts</span>
+            <span class="dd-item-count">${c.all}</span>
+            ${S.distFilter==='all'?'<span class="dd-check">✓</span>':''}
+          </button>
+          ${activeDists.map(d=>{
+            const cnt=S.entries.filter(e=>e.district===d&&(S.filter==='all'||e.type===S.filter)).length;
+            return`<button class="dd-item ${S.distFilter===d?'selected':''}" data-setdist="${d}">
+              <span>${d}</span>
+              <span class="dd-item-count">${cnt}</span>
+              ${S.distFilter===d?'<span class="dd-check">✓</span>':''}
+            </button>`;
+          }).join('')}
+        </div>`:''}
+      </div>
     </div>
-    ${activeDists.length>1?`<div class="filter-inner" style="margin-top:8px">
-      <span class="filter-label">District</span>
-      <button class="f-btn ${S.distFilter==='all'?'active':''}" data-dist="all">🗺️ All</button>
-      ${activeDists.map(d=>`<button class="f-btn ${S.distFilter===d?'active':''}" data-dist="${d}">${d}</button>`).join('')}
-    </div>`:''}
   </div>`;
 }
 
@@ -1110,8 +1223,15 @@ function rLightbox(){
 }
 
 function attachEvents(){
-  document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>set({filter:b.dataset.filter})));
-  document.querySelectorAll('[data-dist]').forEach(b=>b.addEventListener('click',()=>set({distFilter:b.dataset.dist})));
+  q('typeDDBtn',el=>el.addEventListener('click',ev=>{ev.stopPropagation();set({showTypeDD:!S.showTypeDD,showDistDD:false});}));
+  q('distDDBtn',el=>el.addEventListener('click',ev=>{ev.stopPropagation();set({showDistDD:!S.showDistDD,showTypeDD:false});}));
+  document.querySelectorAll('[data-setfilter]').forEach(b=>b.addEventListener('click',ev=>{ev.stopPropagation();set({filter:b.dataset.setfilter,showTypeDD:false});}));
+  document.querySelectorAll('[data-setdist]').forEach(b=>b.addEventListener('click',ev=>{ev.stopPropagation();set({distFilter:b.dataset.setdist,showDistDD:false});}));
+  document.addEventListener('click',function(ev){
+    if(!ev.target.closest('#typeDDWrap')&&!ev.target.closest('#distDDWrap')){
+      if(S.showTypeDD||S.showDistDD) set({showTypeDD:false,showDistDD:false});
+    }
+  },{capture:true,once:false});
   document.querySelectorAll('[data-pin-id]').forEach(b=>b.addEventListener('click',ev=>{
     ev.stopPropagation();
     togglePin(b.dataset.pinId, b.dataset.pinVal==='true');
