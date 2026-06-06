@@ -364,6 +364,21 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
   white-space:nowrap;
 }
 .install-btn:hover{background:rgba(255,255,255,0.15);color:#fff;}
+
+.news-lnk{cursor:pointer;position:relative;}
+.news-lnk-overlay{
+  position:absolute;
+  bottom:0;left:0;right:0;
+  background:linear-gradient(transparent,rgba(0,0,0,0.6));
+  padding:20px 10px 10px;
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:6px;
+  flex-wrap:wrap;
+}
+.news-lnk img{transition:transform 0.4s ease;}
+.news-lnk:hover img{transform:scale(1.04);}
 </style>
 </head>
 <body>
@@ -454,8 +469,15 @@ function mut(p){Object.assign(S,p);}  // update state only, no render
 
 async function loadEntries(){
   set({loading:true});
-  const{data}=await sb.from('idy_entries').select('*').order('is_pinned',{ascending:false}).order('created_at',{ascending:false});
-  set({loading:false,entries:data||[]});
+  try{
+    const{data,error}=await sb.from('idy_entries').select('*').order('is_pinned',{ascending:false}).order('created_at',{ascending:false});
+    if(error)throw error;
+    set({loading:false,entries:data||[]});
+  }catch(err){
+    console.error('loadEntries:',err);
+    set({loading:false,entries:[]});
+    showToast('Error loading: '+err.message,'er');
+  }
 }
 
 async function togglePin(id, currentVal){
@@ -612,6 +634,7 @@ async function submitEntry(){
       district:S.uDistrict,event_date:S.uDate,description:S.uDesc.trim()||null,
       newspaper_name:S.uType==='news'?S.uNewspaper.trim():null,
       news_type:S.uType==='news'?S.uNewsType:null,
+      og_title:S.uType==='news'&&S.uNewsType==='link'?((S.uDesc||'').slice(0,200)||null):null,
       media_url:mediaUrl,thumbnail_url:thumbUrl,
       uploaded_by:S.appUser?.name||S.appUser?.mobile,created_at:new Date().toISOString()
     };
@@ -638,6 +661,22 @@ async function submitEntry(){
     set({uploading:false,pct:0});
     showToast('Upload failed: '+err.message,'er');
   }
+}
+
+
+async function fetchOGPreview(url){
+  try{
+    const res = await fetch('https://api.microlink.io/?url='+encodeURIComponent(url));
+    const data = await res.json();
+    if(data.status==='success'){
+      return {
+        title: data.data?.title||'',
+        image: data.data?.image?.url||data.data?.screenshot?.url||'',
+        description: data.data?.description||''
+      };
+    }
+  }catch(e){ console.log('OG fetch failed',e); }
+  return {title:'',image:'',description:''};
 }
 
 function showToast(msg,type){
@@ -686,7 +725,7 @@ function rHeader(c){
   const isDistAdmin=S.appUser?.role==='district_admin';
   const right=S.user
     ?`<div class="header-right">
-        <div class="user-pill"><div class="dot"></div>${isSuperAdmin?'Super Admin':S.appUser?.name||S.user.email.split('@')[0]}</div>
+        <div class="user-pill"><div class="dot"></div>${isSuperAdmin?'Super Admin':S.appUser?.name||S.appUser?.mobile||'User'}</div>
         ${isSuperAdmin?`<button class="upload-fab" style="background:var(--green)" id="openAdmin">⚙️ Manage Users</button>`:''}
         ${(isSuperAdmin||isDistAdmin)?`<button class="upload-fab" id="openUpload">＋ Upload</button>`:''}
         <button class="install-btn" id="installBtn">📲 Install</button>
@@ -725,7 +764,10 @@ function rFilter(c){
   return`<div class="filter-bar"><div class="filter-inner"><span class="filter-label">Filter</span>${fs.map(f=>`<button class="f-btn ${S.filter===f.v?'active':''}" data-filter="${f.v}">${f.i} ${f.l} <span class="f-cnt">${f.n}</span></button>`).join('')}</div></div>`;
 }
 
-function rMasonry(entries){return`<div class="masonry">${entries.map(e=>rCard(e)).join('')}</div>`;}
+function rMasonry(entries){
+  const cards=entries.map(e=>{try{return rCard(e);}catch(err){console.error('Card error',e?.id,err);return '';}}).join('');
+  return`<div class="masonry">${cards}</div>`;
+}
 
 function rCard(e){
   const pill={photo:'pp',video:'pv',youtube:'py',news:'pn'};
