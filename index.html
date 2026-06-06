@@ -671,6 +671,15 @@ async function submitEntry(){
       const id=ytId(mediaUrl);
       thumbUrl=id?`https://img.youtube.com/vi/${id}/hqdefault.jpg`:null;
       mut({pct:90});updateYogaProgress(90);
+    }else if(S.uType==='news' && S.uNewsType==='link'){
+      mediaUrl=(S.uNewsUrl||'').trim();
+      mut({pct:30});
+      try{
+        const og=await fetchOGPreview(mediaUrl);
+        thumbUrl=og.image||null;
+        if(!S.uDesc.trim()&&og.description) S.uDesc=og.description.slice(0,200);
+      }catch(e){ thumbUrl=null; }
+      mut({pct:90});updateYogaProgress(90);
     }else{
       if(!S.uFile) throw new Error('No file selected. Please select a file first.');
       const r=await uploadCloudinary(S.uFile,p=>{mut({pct:p});updateYogaProgress(p);});
