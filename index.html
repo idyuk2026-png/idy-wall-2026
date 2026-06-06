@@ -633,7 +633,6 @@ async function submitEntry(){
       district:S.uDistrict,event_date:S.uDate,description:S.uDesc.trim()||null,
       newspaper_name:S.uType==='news'?S.uNewspaper.trim():null,
       news_type:S.uType==='news'?S.uNewsType:null,
-      og_title:S.uType==='news'&&S.uNewsType==='link'?(S._ogTitle||null):null,
       media_url:mediaUrl,thumbnail_url:thumbUrl,
       uploaded_by:(S.appUser?.name||S.appUser?.mobile||'unknown'),created_at:new Date().toISOString()
     };
@@ -881,12 +880,12 @@ function rUploadModal(){
   +'<div class="t-opt '+(S.uNewsType==="link"?"sel":"")+'" data-newstype="link"><div class="t-icon">🔗</div><div class="t-name">Web Link</div></div>'
   +'</div></div>'
   +'<div class="fg"><label class="fl">'+(S.uNewsType==="link"?"Portal / Website Name *":"Newspaper Name *")+'</label>'
-  +'<input class="fi" id="uPaper" type="text" placeholder="'+(S.uNewsType==="link"?"e.g. Amar Ujala Online, Dainik Bhaskar...":"e.g. Amar Ujala, Dainik Jagran...")+'" value="${S.uNewspaper}"/>'
+  +'<input class="fi" id="uPaper" type="text" placeholder="'+(S.uNewsType==="link"?"e.g. Amar Ujala Online, Dainik Bhaskar...":"e.g. Amar Ujala, Dainik Jagran...")+'" value="'+S.uNewspaper+'"/>'
   +(e.paper?'<div class="err">'+e.paper+'</div>':'')
   +'</div>'
   +(S.uNewsType==="link"?
     '<div class="fg"><label class="fl">News Article URL *</label>'
-    +'<input class="fi" id="uNewsUrl" type="url" placeholder="https://amarujala.com/news/..." value="${S.uNewsUrl||""}"/>'
+    +'<input class="fi" id="uNewsUrl" type="url" placeholder="https://amarujala.com/news/..." value="'+(S.uNewsUrl||'')+'"/>'
     +(e.newsUrl?'<div class="err">'+e.newsUrl+'</div>':'')
     +'</div>'
   :'')
