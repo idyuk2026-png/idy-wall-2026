@@ -587,7 +587,11 @@ async function uploadCloudinary(file,onPct){
           ?r.secure_url.replace('/upload/','/upload/w_640,h_360,c_fill,so_2,f_jpg/').replace(/\.(mp4|mov|avi|webm)$/i,'.jpg')
           :r.secure_url;
         res({url:r.secure_url,thumb});
-      }else rej(new Error('Upload failed'));
+      }else{
+        let errMsg='Cloudinary error '+xhr.status;
+        try{ const er=JSON.parse(xhr.responseText); errMsg=er.error?.message||errMsg; }catch(e){}
+        rej(new Error(errMsg));
+      }
     };
     xhr.onerror=()=>rej(new Error('Network error'));
     xhr.send(fd);
