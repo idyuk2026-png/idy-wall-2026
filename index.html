@@ -1076,13 +1076,22 @@ function rCard(e){
 
   const dateShort = e.event_date ? new Date(e.event_date).toLocaleDateString('en-IN',{day:'numeric',month:'short'}) : '';
   const isNewsLinkType = e.type==='news' && e.news_type==='link';
-  const mediaLine = (e.type==='photo'||e.type==='video'||(e.type==='news'&&!isNewsLinkType))&&e.media_url
-    ? '\n\n' + e.media_url
-    : e.type==='youtube'&&e.media_url
-    ? '\n\n▶️ ' + e.media_url
-    : isNewsLinkType&&e.media_url
-    ? '\n\n📰 ' + e.media_url
-    : '';
+  // For photos: convert to jpg for WhatsApp preview
+  // For videos: skip direct MP4 (no preview), just app link
+  // For YouTube: include link (WhatsApp shows preview)
+  // For news link: include article URL
+  let mediaLine = '';
+  if((e.type==='photo'||(e.type==='news'&&!isNewsLinkType)) && e.media_url){
+    // Use original URL directly - no transformation needed
+    mediaLine = '\n\n' + e.media_url;
+  } else if(e.type==='video' && e.thumbnail_url){
+    // Use video thumbnail (jpg) for preview
+    mediaLine = '\n\n' + e.thumbnail_url;
+  } else if(e.type==='youtube' && e.media_url){
+    mediaLine = '\n\n' + e.media_url;
+  } else if(isNewsLinkType && e.media_url){
+    mediaLine = '\n\n' + e.media_url;
+  }
   const waText = encodeURIComponent(
     '🧘 *'+(e.event_name||'')+'*'
     +'\n📍 '+(e.location||'')+', '+(e.district||'')
