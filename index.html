@@ -4,13 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Uttarakhand IDY Wall 2026</title>
-<meta name="theme-color" content="#E8610A">
-<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0A1A0C">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="IDY Wall">
-
+<link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi&family=Cinzel:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -347,28 +346,6 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
 }
 .pin-btn:hover{background:rgba(232,97,10,0.08);border-color:var(--saffron);}
 .pin-btn.pinned{background:rgba(232,97,10,0.1);border-color:var(--saffron);}
-
-.install-btn{
-  display:flex;
-  align-items:center;
-  gap:6px;
-  background:rgba(255,255,255,0.08);
-  border:1px solid rgba(255,255,255,0.2);
-  color:rgba(255,255,255,0.85);
-  padding:9px 16px;
-  border-radius:100px;
-  font-size:12.5px;
-  font-weight:600;
-  cursor:pointer;
-  font-family:'DM Sans',sans-serif;
-  transition:all 0.2s;
-  white-space:nowrap;
-}
-.install-btn:hover{
-  background:rgba(255,255,255,0.15);
-  border-color:rgba(255,255,255,0.35);
-  color:#fff;
-}
 </style>
 </head>
 <body>
@@ -389,8 +366,8 @@ const S={
   showAdmin:false,adminDistrict:'',adminName:'',adminMobile:'',adminGenPwd:'',adminUsers:[],adminLoading:false,adminErr:'',adminLastMobile:'',
   showUpload:false,uType:'photo',uFile:null,uFileName:'',
   uEvent:'',uLocation:'',uDistrict:'',uDate:tod(),
-  uDesc:'',uNewspaper:'',uYoutube:'',uNewsUrl:'',
-  uErrors:{},uploading:false,pct:0,uNewsType:'cutting',
+  uDesc:'',uNewspaper:'',uYoutube:'',
+  uErrors:{},uploading:false,pct:0,
   lightbox:null,toast:null
 };
 function tod(){return new Date().toISOString().split('T')[0];}
@@ -459,15 +436,8 @@ function mut(p){Object.assign(S,p);}  // update state only, no render
 
 async function loadEntries(){
   set({loading:true});
-  try{
-    const{data,error}=await sb.from('idy_entries').select('*').order('is_pinned',{ascending:false}).order('created_at',{ascending:false});
-    if(error)throw error;
-    set({loading:false,entries:data||[]});
-  }catch(e){
-    console.error('loadEntries error:',e);
-    set({loading:false,entries:[]});
-    showToast('Error loading entries: '+e.message,'er');
-  }
+  const{data}=await sb.from('idy_entries').select('*').order('is_pinned',{ascending:false}).order('created_at',{ascending:false});
+  set({loading:false,entries:data||[]});
 }
 
 async function togglePin(id, currentVal){
@@ -593,9 +563,7 @@ async function submitEntry(){
   if(!S.uLocation.trim())e.loc='Location required';
   if(!S.uDistrict)e.dist='Select district';
   if(!S.uDate)e.date='Date required';
-  const needsFile = S.uType!=='youtube' && !(S.uType==='news' && S.uNewsType==='link');
-  if(needsFile && !S.uFile)e.file='Select a file';
-  if(S.uType==='news' && S.uNewsType==='link' && !S.uNewsUrl?.trim())e.newsUrl='News URL required';
+  if(S.uType!=='youtube'&&!S.uFile)e.file='Select a file';
   if(S.uType==='youtube'&&!S.uYoutube.trim())e.yt='YouTube URL required';
   if(S.uType==='news'&&!S.uNewspaper.trim())e.paper='Newspaper name required';
   if(Object.keys(e).length){set({uErrors:e});return;}
@@ -623,7 +591,6 @@ async function submitEntry(){
       type:S.uType,event_name:S.uEvent.trim(),location:S.uLocation.trim(),
       district:S.uDistrict,event_date:S.uDate,description:S.uDesc.trim()||null,
       newspaper_name:S.uType==='news'?S.uNewspaper.trim():null,
-      news_type:S.uType==='news'?S.uNewsType:null,
       media_url:mediaUrl,thumbnail_url:thumbUrl,
       uploaded_by:S.appUser?.name||S.appUser?.mobile,created_at:new Date().toISOString()
     };
@@ -639,7 +606,7 @@ async function submitEntry(){
       await new Promise(r=>setTimeout(r,400));
       yc.remove();
     }
-    Object.assign(S,{uploading:false,pct:0,showUpload:false,uFile:null,uFileName:'',uEvent:'',uLocation:'',uDistrict:'',uDate:tod(),uDesc:'',uNewspaper:'',uYoutube:'',uNewsUrl:'',uType:'photo'});
+    Object.assign(S,{uploading:false,pct:0,showUpload:false,uFile:null,uFileName:'',uEvent:'',uLocation:'',uDistrict:'',uDate:tod(),uDesc:'',uNewspaper:'',uYoutube:'',uType:'photo'});
     render();
     showToast('✅ Uploaded to IDY Wall!','ok');
     loadEntries();
@@ -690,7 +657,6 @@ function render(){
     ${S.toast?`<div class="toast ${S.toast.type}">${S.toast.msg}</div>`:''}
   `;
   attachEvents();
-  setupInstallBtn();
 }
 
 function rHeader(c){
@@ -701,7 +667,6 @@ function rHeader(c){
         <div class="user-pill"><div class="dot"></div>${isSuperAdmin?'Super Admin':S.appUser?.name||S.user.email.split('@')[0]}</div>
         ${isSuperAdmin?`<button class="upload-fab" style="background:var(--green)" id="openAdmin">⚙️ Manage Users</button>`:''}
         ${(isSuperAdmin||isDistAdmin)?`<button class="upload-fab" id="openUpload">＋ Upload</button>`:''}
-        <button class="install-btn" id="installBtn" style="display:none">📲 Install</button>
         <button class="logout-btn" id="logoutBtn">Logout</button>
       </div>`
     :`<div class="header-right">
@@ -737,13 +702,7 @@ function rFilter(c){
   return`<div class="filter-bar"><div class="filter-inner"><span class="filter-label">Filter</span>${fs.map(f=>`<button class="f-btn ${S.filter===f.v?'active':''}" data-filter="${f.v}">${f.i} ${f.l} <span class="f-cnt">${f.n}</span></button>`).join('')}</div></div>`;
 }
 
-function rMasonry(entries){
-  const cards = entries.map(e=>{
-    try{ return rCard(e); }
-    catch(err){ console.error('Card render error',e.id, err); return ''; }
-  }).join('');
-  return`<div class="masonry">${cards}</div>`;
-}
+function rMasonry(entries){return`<div class="masonry">${entries.map(e=>rCard(e)).join('')}</div>`;}
 
 function rCard(e){
   const pill={photo:'pp',video:'pv',youtube:'py',news:'pn'};
@@ -758,12 +717,12 @@ function rCard(e){
   }else if(e.type==='video'){
     const vThumb=e.thumbnail_url||'';
     med=`<div class="card-media" data-lv="${encodeURIComponent(e.media_url||'')}">
-      ${vThumb?`<img src="${vThumb}" alt="${e.event_name||''}" loading="lazy" style="width:100%;height:auto;display:block;"/>`:`<div class="vid-ph"></div>`}
+      ${vThumb
+        ?`<img src="${vThumb}" alt="${e.event_name||''}" loading="lazy" style="width:100%;height:auto;display:block;"/>`
+        :`<div class="vid-ph"></div>`}
       <div class="play-over"><div class="play-circle"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></div></div>
       <div class="type-pill pv">🎥 Video</div>
     </div>`;
-  }else{
-    med=`<div class="card-media"><div class="vid-ph"></div></div>`;
   }
   const isSA=S.appUser?.role==='super_admin';
   const pinBtn=isSA?`<button class="pin-btn ${e.is_pinned?'pinned':''}" data-pin-id="${e.id}" data-pin-val="${e.is_pinned?'true':'false'}" title="${e.is_pinned?'Unpin':'Pin to top'}">${e.is_pinned?'📌':'📍'}</button>`:'';
@@ -842,50 +801,7 @@ function rAdminModal(){
 
 function rUploadModal(){
   const e=S.uErrors;const isYT=S.uType==='youtube';const isNews=S.uType==='news';const isVid=S.uType==='video';
-  return`<div class="overlay" id="uploadOverlay"><div class="modal" style="max-width:610px"><button class="modal-close" id="closeUpload">✕</button><div class="upload-header"><div class="upload-title">Upload to IDY Wall</div><div class="upload-sub">Every entry becomes part of Uttarakhand's yoga story 🙏</div></div><div class="upload-body"><div class="sec-title">Content Type</div><div class="type-grid">${[{v:'photo',i:'📷',l:'Photo'},{v:'video',i:'🎥',l:'Video'},{v:'youtube',i:'▶️',l:'YouTube'},{v:'news',i:'📰',l:'News'}].map(t=>`<div class="t-opt ${S.uType===t.v?'sel':''}" data-utype="${t.v}"><div class="t-icon">${t.i}</div><div class="t-name">${t.l}</div></div>`).join('')}</div><div class="sec-title">Event Details</div><div class="fg"><label class="fl">Event Name *</label><input class="fi" id="uEvent" type="text" placeholder="e.g. IDY 2026 Main Event, Char Dham Yoga Sangam..." value="${S.uEvent}" maxlength="120"/>${e.ev?`<div class="err">${e.ev}</div>`:''}</div><div class="two-col"><div class="fg"><label class="fl">Location *</label><input class="fi" id="uLoc" type="text" placeholder="Venue / Place" value="${S.uLocation}"/>${e.loc?`<div class="err">${e.loc}</div>`:''}</div><div class="fg"><label class="fl">Date *</label><input class="fi" id="uDate" type="date" value="${S.uDate}"/>${e.date?`<div class="err">${e.date}</div>`:''}</div></div><div class="fg"><label class="fl">District *</label><select class="fsel" id="uDist"><option value="">— Select District —</option>${DISTRICTS.map(d=>`<option value="${d}" ${S.uDistrict===d?'selected':''}>${d}</option>`).join('')}</select>${e.dist?`<div class="err">${e.dist}</div>`:''}</div>${isNews?`
-  <div class="fg">
-    <label class="fl">News Type</label>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px">
-      <div class="t-opt ${S.uNewsType==='cutting'?'sel':''}" data-newstype="cutting">
-        <div class="t-icon">📰</div>
-        <div class="t-name">Paper Cutting</div>
-      </div>
-      <div class="t-opt ${S.uNewsType==='link'?'sel':''}" data-newstype="link">
-        <div class="t-icon">🔗</div>
-        <div class="t-name">Web Link</div>
-      </div>
-    </div>
-  </div>
-  <div class="fg">
-    <label class="fl">Newspaper / Portal Name *</label>
-    <input class="fi" id="uPaper" type="text" placeholder="${S.uNewsType==='link'?'e.g. Amar Ujala Online, Dainik Jagran...':'e.g. Amar Ujala, Dainik Jagran...'}" value="${S.uNewspaper}"/>
-    ${e.paper?`<div class="err">${e.paper}</div>`:''}
-  </div>
-  ${S.uNewsType==='link'?`
-  <div class="fg">
-    <label class="fl">News URL *</label>
-    <input class="fi" id="uNewsUrl" type="url" placeholder="https://amarujala.com/news/..." value="${S.uNewsUrl||''}"/>
-    ${e.newsUrl?`<div class="err">${e.newsUrl}</div>`:''}
-  </div>`:''}
-`:''}<div class="fg"><label class="fl">Description (optional)</label><textarea class="fta" id="uDesc" placeholder="Brief description...">${S.uDesc}</textarea></div><div class="sec-title">Media</div>${isYT?`
-  <div class="fg">
-    <label class="fl">YouTube URL *</label>
-    <input class="fi" id="uYT" type="url" placeholder="https://youtube.com/watch?v=..." value="${S.uYoutube}"/>
-    ${e.yt?`<div class="err">${e.yt}</div>`:''}
-  </div>`
-: (isNews && S.uNewsType==='link') ? `
-  <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:12px 14px;font-size:12px;color:#1E40AF">
-    ℹ️ Web link already entered above — no file needed
-  </div>`
-: `
-  <div class="up-area" id="upArea">
-    <input type="file" id="fileIn" accept="${isVid?'video/*':'image/*'}"/>
-    <div class="up-icon">${isVid?'🎥':'📸'}</div>
-    <div class="up-text"><strong>Click to select</strong> or drag & drop<br>
-    <small style="opacity:0.7">${isVid?'MP4, MOV — uploaded as-is':'JPG, PNG, WEBP'}</small></div>
-    ${S.uFileName?`<div class="up-preview">✅ ${S.uFileName}</div>`:''}
-  </div>
-  ${e.file?`<div class="err" style="margin-top:5px">${e.file}</div>`:''}`}${S.uploading?`<div class="prog-wrap"><div class="prog-label">Uploading to Cloudinary... ${S.pct}%</div><div class="prog-outer"><div class="prog-inner" style="width:${S.pct}%"></div></div></div>`:''}<button class="btn-p" id="doUpload" ${S.uploading?'disabled':''}>${S.uploading?'⏳ Uploading...':'🙏 Submit to IDY Wall'}</button><button class="btn-s" id="cancelUpload">Cancel</button></div></div></div>`;
+  return`<div class="overlay" id="uploadOverlay"><div class="modal" style="max-width:610px"><button class="modal-close" id="closeUpload">✕</button><div class="upload-header"><div class="upload-title">Upload to IDY Wall</div><div class="upload-sub">Every entry becomes part of Uttarakhand's yoga story 🙏</div></div><div class="upload-body"><div class="sec-title">Content Type</div><div class="type-grid">${[{v:'photo',i:'📷',l:'Photo'},{v:'video',i:'🎥',l:'Video'},{v:'youtube',i:'▶️',l:'YouTube'},{v:'news',i:'📰',l:'News'}].map(t=>`<div class="t-opt ${S.uType===t.v?'sel':''}" data-utype="${t.v}"><div class="t-icon">${t.i}</div><div class="t-name">${t.l}</div></div>`).join('')}</div><div class="sec-title">Event Details</div><div class="fg"><label class="fl">Event Name *</label><input class="fi" id="uEvent" type="text" placeholder="e.g. IDY 2026 Main Event, Char Dham Yoga Sangam..." value="${S.uEvent}" maxlength="120"/>${e.ev?`<div class="err">${e.ev}</div>`:''}</div><div class="two-col"><div class="fg"><label class="fl">Location *</label><input class="fi" id="uLoc" type="text" placeholder="Venue / Place" value="${S.uLocation}"/>${e.loc?`<div class="err">${e.loc}</div>`:''}</div><div class="fg"><label class="fl">Date *</label><input class="fi" id="uDate" type="date" value="${S.uDate}"/>${e.date?`<div class="err">${e.date}</div>`:''}</div></div><div class="fg"><label class="fl">District *</label><select class="fsel" id="uDist"><option value="">— Select District —</option>${DISTRICTS.map(d=>`<option value="${d}" ${S.uDistrict===d?'selected':''}>${d}</option>`).join('')}</select>${e.dist?`<div class="err">${e.dist}</div>`:''}</div>${isNews?`<div class="fg"><label class="fl">Newspaper Name *</label><input class="fi" id="uPaper" type="text" placeholder="e.g. Amar Ujala, Dainik Jagran..." value="${S.uNewspaper}"/>${e.paper?`<div class="err">${e.paper}</div>`:''}</div>`:''}<div class="fg"><label class="fl">Description (optional)</label><textarea class="fta" id="uDesc" placeholder="Brief description...">${S.uDesc}</textarea></div><div class="sec-title">Media</div>${isYT?`<div class="fg"><label class="fl">YouTube URL *</label><input class="fi" id="uYT" type="url" placeholder="https://youtube.com/watch?v=..." value="${S.uYoutube}"/>${e.yt?`<div class="err">${e.yt}</div>`:''}</div>`:`<div class="up-area" id="upArea"><input type="file" id="fileIn" accept="${isVid?'video/*':'image/*'}"/><div class="up-icon">${isVid?'🎥':'📸'}</div><div class="up-text"><strong>Click to select</strong> or drag & drop<br><small style="opacity:0.7">${isVid?'MP4, MOV — uploaded as-is':'JPG, PNG, WEBP'}</small></div>${S.uFileName?`<div class="up-preview">✅ ${S.uFileName}</div>`:''}</div>${e.file?`<div class="err" style="margin-top:5px">${e.file}</div>`:''}`}${S.uploading?`<div class="prog-wrap"><div class="prog-label">Uploading to Cloudinary... ${S.pct}%</div><div class="prog-outer"><div class="prog-inner" style="width:${S.pct}%"></div></div></div>`:''}<button class="btn-p" id="doUpload" ${S.uploading?'disabled':''}>${S.uploading?'⏳ Uploading...':'🙏 Submit to IDY Wall'}</button><button class="btn-s" id="cancelUpload">Cancel</button></div></div></div>`;
 }
 
 function rLightbox(){
@@ -931,8 +847,6 @@ function attachEvents(){
   q('uDesc',el=>el.addEventListener('input',ev=>mut({uDesc:ev.target.value})));
   q('uPaper',el=>el.addEventListener('input',ev=>mut({uNewspaper:ev.target.value})));
   q('uYT',el=>el.addEventListener('input',ev=>mut({uYoutube:ev.target.value})));
-  q('uNewsUrl',el=>el.addEventListener('input',ev=>mut({uNewsUrl:ev.target.value})));
-  document.querySelectorAll('[data-newstype]').forEach(el=>el.addEventListener('click',()=>set({uNewsType:el.dataset.newstype,uFile:null,uFileName:'',uErrors:{}})));
   q('fileIn',el=>el.addEventListener('change',ev=>{const f=ev.target.files[0];if(f)set({uFile:f,uFileName:f.name});}));
   q('doUpload',el=>el.addEventListener('click',submitEntry));
   document.querySelectorAll('[data-li]').forEach(el=>el.addEventListener('click',()=>set({lightbox:{type:'img',url:decodeURIComponent(el.dataset.li),cap:decodeURIComponent(el.dataset.lc||'')}})));
@@ -947,59 +861,12 @@ async function init(){render();await checkSession();await loadEntries();}
 init();
 </script>
 
-
-
-
 <script>
 if('serviceWorker' in navigator){
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(reg => console.log('SW registered', reg.scope))
-      .catch(e => console.log('SW failed', e));
-  });
-}
-</script>
-
-<script>
-// PWA Install Logic
-let deferredPrompt = null;
-
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  // Show all install buttons
-  document.querySelectorAll('#installBtn').forEach(btn => {
-    btn.style.display = 'flex';
-  });
-});
-
-window.addEventListener('appinstalled', () => {
-  deferredPrompt = null;
-  document.querySelectorAll('#installBtn').forEach(btn => {
-    btn.style.display = 'none';
-  });
-  // Show toast
-  const toast = document.createElement('div');
-  toast.className = 'toast ok';
-  toast.textContent = '✅ App installed successfully!';
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
-});
-
-// Install button click handler - runs after each render
-function setupInstallBtn(){
-  document.querySelectorAll('#installBtn').forEach(btn => {
-    // Show if prompt available
-    if(deferredPrompt) btn.style.display = 'flex';
-    btn.addEventListener('click', async () => {
-      if(!deferredPrompt) return;
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if(outcome === 'accepted'){
-        deferredPrompt = null;
-        document.querySelectorAll('#installBtn').forEach(b => b.style.display = 'none');
-      }
-    });
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js')
+      .then(()=>console.log('SW registered'))
+      .catch(e=>console.log('SW error',e));
   });
 }
 </script>
