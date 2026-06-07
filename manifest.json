@@ -1,17 +1,24 @@
 {
-  "name": "Uttarakhand IDY Wall 2026",
+  "name": "IDY Wall",
   "short_name": "IDY Wall",
-  "description": "International Day of Yoga 2026 - Uttarakhand Media Wall",
+  "description": "International Day of Yoga 2026 - Uttarakhand",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0A1A0C",
   "theme_color": "#E8610A",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%230A1A0C'/><text y='130' x='30' font-size='120'>🪷</text></svg>",
+      "src": "icon-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]
