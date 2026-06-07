@@ -537,6 +537,47 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
 }
 .card-share-wa:hover{background:#128C7E;transform:scale(1.05);}
 .card-share-wa svg{width:11px;height:11px;fill:white;flex-shrink:0;}
+
+.delete-btn{
+  width:22px;height:22px;
+  background:rgba(220,38,38,0.1);
+  border:1px solid rgba(220,38,38,0.2);
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:12px;color:#DC2626;
+  flex-shrink:0;
+  transition:all 0.2s;
+  pointer-events:all !important;
+  line-height:1;
+  font-weight:700;
+  padding:0;
+}
+.delete-btn:hover{background:#DC2626;color:white;border-color:#DC2626;}
+
+/* Confirm toast */
+.confirm-toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:#1C1C1C;color:#fff;
+  padding:14px 20px;border-radius:14px;
+  font-size:13.5px;font-weight:500;
+  z-index:9999;
+  display:flex;align-items:center;gap:12px;
+  box-shadow:0 8px 28px rgba(0,0,0,0.35);
+  animation:slideUp 0.28s ease;
+  white-space:nowrap;
+}
+.confirm-toast .ct-yes{
+  background:#DC2626;color:white;
+  border:none;border-radius:8px;
+  padding:7px 16px;font-size:13px;font-weight:600;
+  cursor:pointer;font-family:'DM Sans',sans-serif;
+}
+.confirm-toast .ct-no{
+  background:rgba(255,255,255,0.1);color:white;
+  border:1px solid rgba(255,255,255,0.2);border-radius:8px;
+  padding:7px 14px;font-size:13px;font-weight:500;
+  cursor:pointer;font-family:'DM Sans',sans-serif;
+}
 </style>
 </head>
 <body>
@@ -891,6 +932,34 @@ https://idy2026.vercel.app
   window.open(waUrl, '_blank');
 }
 
+
+async function deleteEntry(id){
+  // Remove confirm toast if exists
+  const existing = document.getElementById('confirmToast');
+  if(existing) existing.remove();
+
+  // Show confirm toast
+  const toast = document.createElement('div');
+  toast.id = 'confirmToast';
+  toast.className = 'confirm-toast';
+  toast.innerHTML = '🗑️ Delete this post?'
+    + '<button class="ct-yes" id="ctYes">Delete</button>'
+    + '<button class="ct-no" id="ctNo">Cancel</button>';
+  document.body.appendChild(toast);
+
+  document.getElementById('ctNo').onclick = ()=>toast.remove();
+  document.getElementById('ctYes').onclick = async ()=>{
+    toast.remove();
+    const{error} = await sb.from('idy_entries').delete().eq('id', id);
+    if(error){ showToast('Delete failed: '+error.message,'er'); return; }
+    showToast('🗑️ Post deleted','ok');
+    loadEntries();
+  };
+
+  // Auto dismiss after 5s
+  setTimeout(()=>{ if(document.getElementById('confirmToast')) toast.remove(); }, 5000);
+}
+
 function showToast(msg,type){
   set({toast:{msg,type}});
   setTimeout(()=>set({toast:null}),3500);
@@ -1112,6 +1181,7 @@ function rCard(e){
     +'<div class="strip-right">'
     +'<span style="font-size:9px;color:rgba(0,0,0,0.3)">'+dateShort+'</span>'
     +pinBtn
+    +(isSA?'<button class="delete-btn" data-del-id="'+e.id+'" title="Delete post">✕</button>':'')
     +'<button class="card-share-wa" data-share-wall="1" title="Share IDY Wall">'
       +'<svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.121 1.532 5.853L.054 23.25a.75.75 0 00.916.919l5.4-1.498A11.954 11.954 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.693-.512-5.228-1.402l-.374-.22-3.876 1.075 1.026-3.762-.243-.388A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>'
       +'Share'
@@ -1308,6 +1378,10 @@ function attachEvents(){
   document.querySelectorAll('[data-share-wall]').forEach(b=>b.addEventListener('click',ev=>{
     ev.stopPropagation();
     shareWall();
+  }));
+  document.querySelectorAll('[data-del-id]').forEach(b=>b.addEventListener('click',ev=>{
+    ev.stopPropagation();
+    deleteEntry(b.dataset.delId);
   }));
   document.querySelectorAll('[data-pin-id]').forEach(b=>b.addEventListener('click',ev=>{
     ev.stopPropagation();
